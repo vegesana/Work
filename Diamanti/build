@@ -1,0 +1,1 @@
+go build -o hwdiag  processHugeFile.go mac.go

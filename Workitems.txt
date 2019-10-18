@@ -1,5 +1,0 @@
-1) MGMT INTERFACE
-    a) Reading GatewayIPV4 and IPV6 address on Bootup
-    b) DHCP enable and Disable with new CRD
-    c) mgmt vrf creation in new linux
-2) Admin Down on IPV6 Interface Handling - Defect
