@@ -1,1 +1,2 @@
-go build -o hwdiag  processHugeFile.go mac.go
+go build -o hwdiag  main.go macProcessing.go pinProcessing.go
+
