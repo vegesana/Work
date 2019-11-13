@@ -22,7 +22,7 @@ func processMacInfo(line lineData) {
 			macvlan.fileName = line.filename
 			// FDB[vlan] = mac
 			// Debug("Raju:FDB is ", FDB)
-			Debug("Raju: processMacInfo:", macvlan)
+			Error("Raju: PostMac:", macvlan)
 			Gdata.GWriteCh <- macvlan
 		}
 	}
