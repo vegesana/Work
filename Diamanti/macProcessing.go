@@ -20,9 +20,7 @@ func MacInfoFun(line lineData) {
 			//isStatic := result[4]
 			macvlan.portNum = result[5]
 			macvlan.fileName = line.filename
-			// FDB[vlan] = mac
-			// Debug("Raju:FDB is ", FDB)
-			Error("Raju: PostMac:", macvlan)
+			Debug("Raju: PostMac:", macvlan)
 			Gdata.GWriteCh <- macvlan
 		}
 	}

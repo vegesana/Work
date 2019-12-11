@@ -13,7 +13,7 @@ func IntfInfoFun(line lineData) {
 	// is deliimter - check the ncdutil output to know what is hte
 	// delimiter
 	if text == "" {
-		Debug("Raju:", TempIntfInfo[filename])
+		Debug("IntfInfoFun:", TempIntfInfo[filename])
 		intfInfoHandler(filename, TempIntfInfo[filename])
 		TempIntfInfo[filename] = ""
 	} else {
@@ -33,7 +33,6 @@ func intfInfoHandler(name string, data string) {
 			sport := GPort{name, element[1]}
 			dport := GPort{name, element[2]}
 			pininfo := PinInfo{sport, dport}
-			Error("RajuPost", pininfo)
 			Gdata.GWriteCh <- pininfo
 		}
 	}

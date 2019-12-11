@@ -1,11 +1,5 @@
 package main
 
-// Place HOlder Functions
-func CounterFun(line lineData) {
-	Debug("Inside CounterFun:", line)
-	return
-}
-
 func VlanInfoFun(line lineData) {
 	Debug("Inside VlanInfoFun:", line)
 	return

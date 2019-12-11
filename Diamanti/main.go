@@ -13,8 +13,11 @@ import (
 
 var tempDir string
 var myfile *os.File
-var splfile *os.File
+var errfile *os.File
 
+type MyError struct {
+	myerr string
+}
 type MacInfo struct {
 	fileName string
 	mac      string
@@ -58,6 +61,7 @@ type FInfo struct {
 	size    int64
 }
 
+var MyErrSlice []MyError
 var JunkCh chan interface{}
 var CounterCh chan interface{}
 var NifInfoCh chan interface{}
@@ -74,6 +78,7 @@ var NicInfoCh chan interface{}
 
 var FileDB map[string]FInfo
 var TempIntfInfo map[string]string
+var TempCntrInfo map[string]string
 
 type GlobalData struct {
 	// filename, vlan, mac, macInfo
@@ -95,40 +100,34 @@ type Data struct {
 	funptr func(lineData)
 }
 
-var StrSlice []string
-
 func Error(param ...interface{}) {
-	fmt.Fprintln(splfile, param)
+	fmt.Fprintln(errfile, param)
 	fmt.Println(param)
 }
-
 func Input(param ...interface{}) {
 	fmt.Println(param)
 }
 
 func Dump(param ...interface{}) {
-	//fmt.Fprintln(myfile, param)
 	fmt.Println(param)
 }
 
 func Debug(param ...interface{}) {
 	fmt.Fprintln(myfile, param)
-	//fmt.Println(param)
 }
 
 func main() {
 
-	// String Slice - This will be adjusted based on the text in the
-	// file
 	tempDir = "/tmp/Raju/"
 	defer myfile.Close()
-	defer splfile.Close()
+	defer errfile.Close()
 
 	myfile, _ = os.OpenFile(tempDir+"debug.log", os.O_WRONLY|os.O_CREATE, 0666)
-	splfile, _ = os.OpenFile(tempDir+"error.log", os.O_WRONLY|os.O_CREATE, 0666)
+	errfile, _ = os.OpenFile(tempDir+"error.log", os.O_WRONLY|os.O_CREATE, 0666)
 
 	FileDB = map[string]FInfo{}
 	TempIntfInfo = map[string]string{}
+	TempCntrInfo = map[string]string{}
 
 	Gdata = GlobalData{}
 	Gdata.BufSize = 40
@@ -169,13 +168,6 @@ func main() {
 	go goRoutine("Lif Info", LifInfoCh, LifInfoFun)
 	go goRoutine("Netowrk Info", NetworkInfoCh, NetworkInfoFun)
 	go goRoutine("Nic Info", NicInfoCh, NicInfoFun)
-
-	// All the strings that are part of the input files. Each string
-	// will get a channel created
-	StrSlice = []string{"Network Interface Info", "NIC Interface Info",
-		"NVMEOE Interface Info", "NIF Interface Info", "LIF Interface Info",
-		"Statistics Info", "Cfg Info", "CPSS Info", "PCL Info",
-		"VLAN Info", "MAC Info"}
 
 	go func() {
 		for {
@@ -243,6 +235,12 @@ func readAllFiles() {
 					Debug("Picked Counter Channel")
 					mych = CounterCh
 				}
+
+				if strings.Index(ln, "QOS Info:") == 0 {
+					Debug("Picked Qos Channel")
+					mych = CounterCh
+				}
+
 				if strings.Index(ln, "Network Interface Info") == 0 {
 					Debug("Picked Network Interface Channel")
 					mych = NetworkInfoCh
@@ -315,7 +313,7 @@ func readFromStdin() {
 		Input("Enter 1 to dump macdb")
 		Input("Enter 2 to dump pindb")
 		Input("Enter 3 to dump pcldb")
-		Input("Enter 4 to enter mac,vlan")
+		Input("Enter 4 to Dump all Errors")
 		Input("Enter 5 to servername,port")
 		Input("Enter 7 to exit")
 		stdscanner.Scan()
@@ -336,6 +334,10 @@ func readFromStdin() {
 				Dump("Dump Pcl db ")
 				pcl := pcldata{}
 				sendOnToReadCh(pcl)
+			}
+			if val == 4 {
+				Dump("Dump Errors from File")
+				DumpErrors()
 			}
 
 			if val == 7 {
@@ -427,6 +429,9 @@ func buildDatabase(wdata interface{}) {
 	case pcldata:
 		pata := wdata.(pcldata)
 		Gdata.PclSlice = append(Gdata.PclSlice, pata)
+	case MyError:
+		errdata := wdata.(MyError)
+		MyErrSlice = append(MyErrSlice, errdata)
 	default:
 		Debug("Writeing to database failed - Unknown type")
 	}

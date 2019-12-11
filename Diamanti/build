@@ -1,3 +1,4 @@
 go build -o hwdiag  main.go macProcessing.go \
-splHandling.go pclProcessing.go placeHolder.go intfInfoHandler.go
+splHandling.go pclProcessing.go placeHolder.go intfInfoHandler.go \
+counterProcessing.go utils.go
 
