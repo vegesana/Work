@@ -59,21 +59,8 @@ type FInfo struct {
 }
 
 var JunkCh chan interface{}
-var CounterCh chan interface{}
-var NifInfoCh chan interface{}
-var LifInfoCh chan interface{}
-var MacInfoCh chan interface{}
-var VlanInfoCh chan interface{}
-var IntfInfoCh chan interface{}
-var NvmInfoCh chan interface{}
-var PclInfoCh chan interface{}
-var StatsInfoCh chan interface{}
-var CfgInfoCh chan interface{}
-var NetworkInfoCh chan interface{}
-var NicInfoCh chan interface{}
 
 var FileDB map[string]FInfo
-var TempIntfInfo map[string]string
 
 type GlobalData struct {
 	// filename, vlan, mac, macInfo
@@ -115,7 +102,16 @@ func Debug(param ...interface{}) {
 	fmt.Fprintln(myfile, param)
 	//fmt.Println(param)
 }
+func getFuncPtr(index int) func(lineData) {
+	if index == 10 {
+		return processMacInfo
+	}
+	if index == 8 {
+		return processPclInfo
+	}
 
+	return nil
+}
 func main() {
 
 	// String Slice - This will be adjusted based on the text in the
@@ -128,7 +124,6 @@ func main() {
 	splfile, _ = os.OpenFile(tempDir+"error.log", os.O_WRONLY|os.O_CREATE, 0666)
 
 	FileDB = map[string]FInfo{}
-	TempIntfInfo = map[string]string{}
 
 	Gdata = GlobalData{}
 	Gdata.BufSize = 40
@@ -141,34 +136,9 @@ func main() {
 	Gdata.GReadCh = make(chan interface{}) // Blocking Read
 
 	go ProcessDataStructures()
-
 	JunkCh = make(chan interface{}, Gdata.BufSize)
-	CounterCh = make(chan interface{}, Gdata.BufSize)
-	IntfInfoCh = make(chan interface{}, Gdata.BufSize)
-	VlanInfoCh = make(chan interface{}, Gdata.BufSize)
-	MacInfoCh = make(chan interface{}, Gdata.BufSize)
-	NifInfoCh = make(chan interface{}, Gdata.BufSize)
-	PclInfoCh = make(chan interface{}, Gdata.BufSize)
-	StatsInfoCh = make(chan interface{}, Gdata.BufSize)
-	CfgInfoCh = make(chan interface{}, Gdata.BufSize)
-	NvmInfoCh = make(chan interface{}, Gdata.BufSize)
-	LifInfoCh = make(chan interface{}, Gdata.BufSize)
-	NetworkInfoCh = make(chan interface{}, Gdata.BufSize)
-	NicInfoCh = make(chan interface{}, Gdata.BufSize)
 
 	go goRoutine("Junk", JunkCh, nil)
-	go goRoutine("Counters", CounterCh, CounterFun)
-	go goRoutine("Interface Info", IntfInfoCh, IntfInfoFun)
-	go goRoutine("Vlan Info", VlanInfoCh, VlanInfoFun)
-	go goRoutine("Mac Info", MacInfoCh, MacInfoFun)
-	go goRoutine("Nif Info", NifInfoCh, NifInfoFun)
-	go goRoutine("Pcl Info", PclInfoCh, PclInfoFun)
-	go goRoutine("Stats Info", StatsInfoCh, StasInfoFun)
-	go goRoutine("Cfg Info", CfgInfoCh, CfgInfoFun)
-	go goRoutine("Nvm Info", NvmInfoCh, NvmInfoFun)
-	go goRoutine("Lif Info", LifInfoCh, LifInfoFun)
-	go goRoutine("Netowrk Info", NetworkInfoCh, NetworkInfoFun)
-	go goRoutine("Nic Info", NicInfoCh, NicInfoFun)
 
 	// All the strings that are part of the input files. Each string
 	// will get a channel created
@@ -177,6 +147,16 @@ func main() {
 		"Statistics Info", "Cfg Info", "CPSS Info", "PCL Info",
 		"VLAN Info", "MAC Info"}
 
+	Gdata.MyMap = make(map[string]Data)
+	for i, str := range StrSlice {
+		tempCh := make(chan interface{}, Gdata.BufSize)
+		fun := getFuncPtr(i)
+		Gdata.MyMap[str] = Data{mych: tempCh, funptr: fun}
+		go goRoutine(str, tempCh, fun)
+	}
+
+	// Use File System MAP insteqad of timeout
+	Debug("My map is ", Gdata.MyMap)
 	go func() {
 		for {
 			select {
@@ -230,76 +210,25 @@ func readAllFiles() {
 		}
 
 		// This create .tmp file in /same Dir for all txt files
-		// SplHandle()
-		// go splHandlingGo(tempDir)
+		SplHandle()
+		go splHandlingGo(tempDir)
 		FileDB[filename] = finfo
 		go func(f *os.File, filename string, mych chan interface{}) {
 			scanner := bufio.NewScanner(f)
 			for scanner.Scan() {
-				origTxt := scanner.Text()
-				ln := strings.TrimSpace(origTxt)
+				ln := scanner.Text()
 
-				if strings.Index(ln, "Counters Info:") == 0 {
-					Debug("Picked Counter Channel")
-					mych = CounterCh
-				}
-				if strings.Index(ln, "Network Interface Info") == 0 {
-					Debug("Picked Network Interface Channel")
-					mych = NetworkInfoCh
-				}
-
-				if strings.Index(ln, "NIC Interface Info") == 0 {
-					Debug("Picked Network Interface Channel")
-					mych = NicInfoCh
+				// Get the proper Channel
+				// Checking the paragraph header in the file
+				for key, value := range Gdata.MyMap {
+					// based on heading, write to that channel
+					if strings.Contains(ln, key) {
+						mych = value.mych
+					}
 				}
 
-				if strings.Index(ln, "NVMEOE Interface Info") == 0 {
-					Debug("NVMEOE Interface Info channel ")
-					mych = NvmInfoCh
-				}
-				if strings.Index(ln, "VLAN Info") == 0 {
-					Debug("Vlan Info channel ")
-					mych = VlanInfoCh
-				}
-				if strings.Index(ln, "MAC Info") == 0 {
-					Debug("MAC Info channel ")
-					mych = MacInfoCh
-				}
-				if strings.Index(ln, "PCL Info") == 0 {
-					Debug("PCL Info channel ")
-					mych = PclInfoCh
-				}
-				if strings.Index(ln, "Interface Info") == 0 {
-					Debug("Interface Info channel ")
-					mych = IntfInfoCh
-				}
-				if strings.Index(ln, "LIF Interface Info") == 0 {
-					Debug("Lif interface Info channel ")
-					mych = LifInfoCh
-				}
-				if strings.Index(ln, "NIF Interface Info") == 0 {
-					Debug("Lif interface Info channel ")
-					mych = NifInfoCh
-				}
-
-				if strings.Index(ln, "Statistics Info") == 0 {
-					Debug("Statistic Info channel ")
-					mych = StatsInfoCh
-				}
-				if strings.Index(ln, "Cfg Info") == 0 {
-					Debug("Cfg Info channel ")
-					mych = CfgInfoCh
-				}
-
-				lninfo := lineData{filename, origTxt, filename}
+				lninfo := lineData{filename, ln, filename}
 				mych <- lninfo
-
-				// All the end to determine the end of Channel
-				if strings.Contains(ln, "maxPortDescrLimit") {
-					// Place HOlder till we find new channel
-					mych = JunkCh
-				}
-
 			}
 			if err := scanner.Err(); err != nil {
 				Debug("Err:", err.Error())
@@ -452,10 +381,4 @@ func goRoutine(str string, ch chan interface{}, fun func(lineData)) {
 
 		}
 	}
-}
-func (line lineData) getText() string {
-	return line.line
-}
-func (line lineData) getFileName() string {
-	return line.filename
 }

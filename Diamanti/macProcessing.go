@@ -6,7 +6,7 @@ import (
 )
 
 // Index: 1256, Mac: e8:66:c4:7f:ff:f0, Vlan: 4094, Static: Yes, Port: 0
-func processMacInfo(line lineData) {
+func MacInfoFun(line lineData) {
 	macregexp := `([0-9a-f:]+[0-9a-f]+)`
 	if strings.Contains(line.line, "Index") {
 		Debug("String is::", line.line)
