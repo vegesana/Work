@@ -10,15 +10,6 @@ func NifInfoFun(line lineData) {
 	return
 }
 
-func StasInfoFun(line lineData) {
-	Debug("Inside StasInfoFun:", line)
-	return
-}
-
-func CfgInfoFun(line lineData) {
-	Debug("Inside CfgInfoFun:", line)
-	return
-}
 func NvmInfoFun(line lineData) {
 	Debug("Inside NvmInfoFun:", line)
 	return

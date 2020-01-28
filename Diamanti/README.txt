@@ -8,14 +8,14 @@ HARDWARE DEBUG/NCD DEBUG
             and copy it there
         4) ncdutils -a and copy the output into this files
     RUN
-        ./hwdiag
+        ./hwdiag -path=/Users/rajuv/Techsupport/6477
     BUILD
         call ./build script. This will compile all the required files
     TODO
         1) Statistics [ncdutil -s]
 PKT DECODE
     INPUT: 
-        1) Copy the hexa captured pkt output to DecodeFiles/pktinput.txt
+        1) Copy the hexa captured pkt output to InputFiles/pktinput.txt
     RUN
         1) go run pktDecode.go
 COUNTERS DECODE
@@ -71,3 +71,13 @@ DESIGN
     PIN Database
         key:server,port
         value: server,port
+
+DEBUG LIVE SWITCH
+    ./rajuDiag.sh appserv93 appserv94
+    # don't run it as rajuDiag.sh app..use ./
+    1) This will run diah.sh on each of the remote servers. This check 
+        for status of Services and collect logs (bosun,convoy and armada) 
+        and sort those files by time into single file [ rajumerged.txt ]
+    2) This create rajumerged.txt file in each of the server /home/diamanti
+    3) that file is copied to this folder as appserv93Raju.txt..etc
+    4) Embedded Commnand output is copied to appserv93RajuEmbed.txt

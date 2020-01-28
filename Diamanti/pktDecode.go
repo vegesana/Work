@@ -24,7 +24,7 @@ type Pkt struct {
 
 func processFile() {
 	pktslice := make([]Pkt, 0)
-	fd, _ := os.Open("DecodeFiles/pktinput.txt")
+	fd, _ := os.Open("InputFiles/pktinput.txt")
 	defer fd.Close()
 	scanner := bufio.NewScanner(fd)
 	for scanner.Scan() {
@@ -43,7 +43,7 @@ func main() {
 	processFile()
 
 	watcher, _ := fsnotify.NewWatcher()
-	watcher.Add("DecodeFiles/")
+	watcher.Add("InputFiles/")
 
 	for {
 		select {

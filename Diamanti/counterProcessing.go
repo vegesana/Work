@@ -29,7 +29,7 @@ func CounterFun(line lineData) {
 
 func counterHandler(name string, data string) {
 
-	filename := "TextCounter.txt"
+	filename := "CounterTemplate.txt"
 	Debug("Raju: CounterFun:", name, data)
 	// expression := `\s+Port: (\d+)\s+Good UC Pkt Rcvd:\s+(\d+)`
 	expression, keyslice := GetRegExp(filename)
@@ -48,7 +48,8 @@ func processCounterValues(name string, strslice []string, keyslice []string) {
 
 	// Any of these values should not be zero. Get the line numbers
 	// from TextCounter.txt file [set num]
-	var BadArray = []int{5, 6, 16, 21, 22, 23, 24, 26, 27, 28, 29, 30}
+	// var BadArray = []int{5, 6, 16, 21, 22, 23, 24, 26, 27, 28, 29, 30}
+	var BadArray = []int{3, 4, 14, 19, 20, 21, 22, 24, 25, 26, 27, 28}
 
 	for i := 0; i < len(BadArray); i++ {
 		index := BadArray[i]
@@ -56,9 +57,7 @@ func processCounterValues(name string, strslice []string, keyslice []string) {
 			if intValue != 0 {
 				errstr := fmt.Sprintf("ERROR: %s:Port:%s have Error:%s:%d\n",
 					name, strslice[1], keyslice[index-1], intValue)
-				Error(errstr)
-				err := MyError{errstr}
-				Gdata.GWriteCh <- err
+				SendError(errstr)
 			}
 		} else {
 			Error("Count not convert the index Integr", index)

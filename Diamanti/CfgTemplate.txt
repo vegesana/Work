@@ -1,0 +1,1 @@
+curr_uptime: 1887, last_uptime: 1878, hb_state: 1, bcast_mcast_ntwk_pif: 0x8
