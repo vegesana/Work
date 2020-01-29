@@ -3,17 +3,34 @@ package main
 // TextProcessingTool.pdf
 import (
 	"bufio"
+	"errors"
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
 var tempDir string
+var inputDir string
 var myfile *os.File
-var splfile *os.File
+var errfile *os.File
+
+type SystemInfo struct {
+	boardInfo string
+	productId string
+}
+type MyError struct {
+	myerr string
+}
+
+type MyInfo struct {
+	myinfo string
+}
 
 type MacInfo struct {
 	fileName string
@@ -58,6 +75,8 @@ type FInfo struct {
 	size    int64
 }
 
+var MyErrSlice []MyError
+var MyInfoSlice []MyInfo
 var JunkCh chan interface{}
 var CounterCh chan interface{}
 var NifInfoCh chan interface{}
@@ -74,18 +93,22 @@ var NicInfoCh chan interface{}
 
 var FileDB map[string]FInfo
 var TempIntfInfo map[string]string
+var TempCntrInfo map[string]string
+var TempStatsInfo map[string]string
+var SystemMap map[string]SystemInfo
 
 type GlobalData struct {
 	// filename, vlan, mac, macInfo
-	FDB      map[MacVlan]map[GPort]struct{}
-	PortDB   map[GPort]map[MacVlan]struct{}
-	VlanDB   map[GVlan]map[GPort]struct{}
-	PinDB    map[GPort]GPort
-	PclSlice []pcldata
-	BufSize  int
-	MyMap    map[string]Data
-	GWriteCh chan interface{}
-	GReadCh  chan interface{}
+	FDB         map[MacVlan]map[GPort]struct{}
+	PortDB      map[GPort]map[MacVlan]struct{}
+	VlanDB      map[GVlan]map[GPort]struct{}
+	PinDB       map[GPort]GPort
+	PclSlice    []pcldata
+	BufSize     int
+	MyMap       map[string]Data
+	GWriteCh    chan interface{}
+	GReadCh     chan interface{}
+	ReadFilesCh chan interface{}
 }
 
 var Gdata GlobalData
@@ -95,40 +118,57 @@ type Data struct {
 	funptr func(lineData)
 }
 
-var StrSlice []string
-
-func Error(param ...interface{}) {
-	fmt.Fprintln(splfile, param)
+func Info(param ...interface{}) {
 	fmt.Println(param)
 }
-
+func Error(param ...interface{}) {
+	fmt.Fprintln(errfile, param)
+	fmt.Println(param)
+}
 func Input(param ...interface{}) {
 	fmt.Println(param)
 }
 
 func Dump(param ...interface{}) {
-	//fmt.Fprintln(myfile, param)
 	fmt.Println(param)
 }
 
 func Debug(param ...interface{}) {
 	fmt.Fprintln(myfile, param)
-	//fmt.Println(param)
+}
+
+func resetDB() {
+	Gdata.FDB = map[MacVlan]map[GPort]struct{}{}
+	Gdata.PortDB = map[GPort]map[MacVlan]struct{}{}
+	Gdata.VlanDB = map[GVlan]map[GPort]struct{}{}
+	Gdata.PinDB = map[GPort]GPort{}
+	MyErrSlice = nil
+	MyInfoSlice = nil
 }
 
 func main() {
 
-	// String Slice - This will be adjusted based on the text in the
-	// file
 	tempDir = "/tmp/Raju/"
+	inputDir = "/Users/rajuv/Techsupport/6052"
+	SystemMap = map[string]SystemInfo{}
 	defer myfile.Close()
-	defer splfile.Close()
+	defer errfile.Close()
+
+	pathValue := flag.String("path", "/Users/rajuv/Techsupport/6052",
+		"Directoy Path")
+	flag.Parse()
+	fmt.Println("Curnt Path is ", *pathValue)
+	inputDir = *pathValue
 
 	myfile, _ = os.OpenFile(tempDir+"debug.log", os.O_WRONLY|os.O_CREATE, 0666)
-	splfile, _ = os.OpenFile(tempDir+"error.log", os.O_WRONLY|os.O_CREATE, 0666)
+	errfile, _ = os.OpenFile(tempDir+"error.log", os.O_WRONLY|os.O_CREATE, 0666)
 
+	err := getFileContents("boardinfo.log")
+	Debug("boardinfo.log file error is ", err)
 	FileDB = map[string]FInfo{}
 	TempIntfInfo = map[string]string{}
+	TempCntrInfo = map[string]string{}
+	TempStatsInfo = map[string]string{}
 
 	Gdata = GlobalData{}
 	Gdata.BufSize = 40
@@ -138,7 +178,8 @@ func main() {
 	Gdata.PinDB = map[GPort]GPort{}
 	Gdata.PclSlice = make([]pcldata, 0)
 	Gdata.GWriteCh = make(chan interface{}, Gdata.BufSize)
-	Gdata.GReadCh = make(chan interface{}) // Blocking Read
+	Gdata.GReadCh = make(chan interface{})     // Blocking Read
+	Gdata.ReadFilesCh = make(chan interface{}) // Blocking Read
 
 	go ProcessDataStructures()
 
@@ -163,31 +204,33 @@ func main() {
 	go goRoutine("Mac Info", MacInfoCh, MacInfoFun)
 	go goRoutine("Nif Info", NifInfoCh, NifInfoFun)
 	go goRoutine("Pcl Info", PclInfoCh, PclInfoFun)
-	go goRoutine("Stats Info", StatsInfoCh, StasInfoFun)
+	go goRoutine("Stats Info", StatsInfoCh, StatsInfoFun)
 	go goRoutine("Cfg Info", CfgInfoCh, CfgInfoFun)
 	go goRoutine("Nvm Info", NvmInfoCh, NvmInfoFun)
 	go goRoutine("Lif Info", LifInfoCh, LifInfoFun)
 	go goRoutine("Netowrk Info", NetworkInfoCh, NetworkInfoFun)
 	go goRoutine("Nic Info", NicInfoCh, NicInfoFun)
 
-	// All the strings that are part of the input files. Each string
-	// will get a channel created
-	StrSlice = []string{"Network Interface Info", "NIC Interface Info",
-		"NVMEOE Interface Info", "NIF Interface Info", "LIF Interface Info",
-		"Statistics Info", "Cfg Info", "CPSS Info", "PCL Info",
-		"VLAN Info", "MAC Info"}
-
 	go func() {
+		Debug("Go routine to read ncdutil file")
 		for {
 			select {
 			// This check whether anything got changed
 			// in the file or any new file added ??
-			case <-time.After(5 * time.Second):
-
-				readAllFiles()
+			case <-Gdata.ReadFilesCh:
+				readLogFiles("ncdutil.log")
 			}
 		}
 	}()
+	for server, sysinfo := range SystemMap {
+		fmt.Println(server, sysinfo)
+		if strings.Contains(sysinfo.boardInfo, "Boston") {
+			Gdata.ReadFilesCh <- struct{}{}
+		} else {
+			errstr := fmt.Sprintf("%s is NOT D20\n", server)
+			SendError(errstr)
+		}
+	}
 	readFromStdin()
 }
 
@@ -206,139 +249,192 @@ func isLineSpl(ln string) bool {
 	return false
 
 }
-func readAllFiles() {
-	// Host name is file name
-	Debug("Reading all files")
-	dir, _ := filepath.Glob(tempDir + "*.txt")
-	for _, filename1 := range dir {
-		// Check wether the file have changed - CRC/Checksum. If so
-		// then run through it - ie First Remove the entries by that
-		// filename
-		filename := filepath.Base(filename1)
-		filename = strings.TrimSuffix(filename, filepath.Ext(filename))
+func getServerNameFromPath(path string) string {
+	re, _ := regexp.Compile(`appserv\d+`)
+	value := re.FindString(path)
+	return value
+}
 
-		f, _ := os.Open(filename1)
-		fi, _ := f.Stat()
-		finfo := FInfo{fi.ModTime(), fi.Size()}
+func getFileContents(filename string) error {
 
-		if fvalue, ok := FileDB[filename]; ok {
-			if finfo.modTime == fvalue.modTime &&
-				finfo.size == fvalue.size {
-				Debug("Same File - no action on file ", filename)
-				continue
+	var servername string
+	err := errors.New("File not found")
+
+	tempDir := map[string]struct{}{}
+	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
+
+		if info.Name() == filename {
+			err = nil
+			if servername = getServerNameFromPath(path); servername == "" {
+				Error("No Name with appserv found in path", path)
+				return nil
 			}
+			if _, ok := tempDir[servername]; ok {
+				fmt.Println("File path already exits", path)
+				Debug("File path already exits", path)
+				return nil
+			}
+			tempDir[servername] = struct{}{}
+			f, _ := os.Open(path)
+			allText, _ := ioutil.ReadAll(f)
+			productid := getValueOfStr(string(allText), "Product id", ":")
+			board := getValueOfStr(string(allText), "Board", ":")
+
+			SystemMap[servername] = SystemInfo{board, productid}
+
+			return nil
+		}
+		return nil
+	})
+	return err
+}
+func readLogFiles(filename string) error {
+	var servername string
+	// Host name is file name
+	Debug("Reading all NCD files")
+	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			Error("FIlepaqqth walk failed")
+			return err
 		}
 
-		// This create .tmp file in /same Dir for all txt files
-		// SplHandle()
-		// go splHandlingGo(tempDir)
-		FileDB[filename] = finfo
-		go func(f *os.File, filename string, mych chan interface{}) {
-			scanner := bufio.NewScanner(f)
-			for scanner.Scan() {
-				origTxt := scanner.Text()
-				ln := strings.TrimSpace(origTxt)
-
-				if strings.Index(ln, "Counters Info:") == 0 {
-					Debug("Picked Counter Channel")
-					mych = CounterCh
-				}
-				if strings.Index(ln, "Network Interface Info") == 0 {
-					Debug("Picked Network Interface Channel")
-					mych = NetworkInfoCh
-				}
-
-				if strings.Index(ln, "NIC Interface Info") == 0 {
-					Debug("Picked Network Interface Channel")
-					mych = NicInfoCh
-				}
-
-				if strings.Index(ln, "NVMEOE Interface Info") == 0 {
-					Debug("NVMEOE Interface Info channel ")
-					mych = NvmInfoCh
-				}
-				if strings.Index(ln, "VLAN Info") == 0 {
-					Debug("Vlan Info channel ")
-					mych = VlanInfoCh
-				}
-				if strings.Index(ln, "MAC Info") == 0 {
-					Debug("MAC Info channel ")
-					mych = MacInfoCh
-				}
-				if strings.Index(ln, "PCL Info") == 0 {
-					Debug("PCL Info channel ")
-					mych = PclInfoCh
-				}
-				if strings.Index(ln, "Interface Info") == 0 {
-					Debug("Interface Info channel ")
-					mych = IntfInfoCh
-				}
-				if strings.Index(ln, "LIF Interface Info") == 0 {
-					Debug("Lif interface Info channel ")
-					mych = LifInfoCh
-				}
-				if strings.Index(ln, "NIF Interface Info") == 0 {
-					Debug("Lif interface Info channel ")
-					mych = NifInfoCh
-				}
-
-				if strings.Index(ln, "Statistics Info") == 0 {
-					Debug("Statistic Info channel ")
-					mych = StatsInfoCh
-				}
-				if strings.Index(ln, "Cfg Info") == 0 {
-					Debug("Cfg Info channel ")
-					mych = CfgInfoCh
-				}
-
-				lninfo := lineData{filename, origTxt, filename}
-				mych <- lninfo
-
-				// All the end to determine the end of Channel
-				if strings.Contains(ln, "maxPortDescrLimit") {
-					// Place HOlder till we find new channel
-					mych = JunkCh
-				}
-
+		if info.Name() == filename {
+			if servername = getServerNameFromPath(path); servername == "" {
+				Error("No Name with appserv found in path", path)
+				return nil
 			}
-			if err := scanner.Err(); err != nil {
-				Debug("Err:", err.Error())
-			}
-		}(f, filename, JunkCh)
-	}
+			Debug("File Path is ", path)
+			f, _ := os.Open(path)
+			go func(f *os.File, servername string, mych chan interface{}) {
+				scanner := bufio.NewScanner(f)
+				for scanner.Scan() {
+					origTxt := scanner.Text()
+					ln := strings.TrimSpace(origTxt)
 
+					if strings.Index(ln, "Counters Info:") == 0 {
+						Debug("Picked Counter Channel")
+						mych = CounterCh
+					}
+
+					if strings.Index(ln, "QOS Info:") == 0 {
+						Debug("Picked Qos Channel")
+						mych = CounterCh
+					}
+
+					if strings.Index(ln, "Network Interface Info") == 0 {
+						Debug("Picked Network Interface Channel")
+						mych = NetworkInfoCh
+					}
+
+					if strings.Index(ln, "NIC Interface Info") == 0 {
+						Debug("Picked Network Interface Channel")
+						mych = NicInfoCh
+					}
+
+					if strings.Index(ln, "NVMEOE Interface Info") == 0 {
+						Debug("NVMEOE Interface Info channel ")
+						mych = NvmInfoCh
+					}
+					if strings.Index(ln, "VLAN Info") == 0 {
+						Debug("Vlan Info channel ")
+						mych = VlanInfoCh
+					}
+					if strings.Index(ln, "MAC Info") == 0 {
+						Debug("MAC Info channel ")
+						mych = MacInfoCh
+					}
+					if strings.Index(ln, "PCL Info") == 0 {
+						Debug("PCL Info channel ")
+						mych = PclInfoCh
+					}
+					if strings.Index(ln, "Interface Info") == 0 {
+						Debug("Interface Info channel ")
+						mych = IntfInfoCh
+					}
+					if strings.Index(ln, "LIF Interface Info") == 0 {
+						Debug("Lif interface Info channel ")
+						mych = LifInfoCh
+					}
+					if strings.Index(ln, "NIF Interface Info") == 0 {
+						Debug("Lif interface Info channel ")
+						mych = NifInfoCh
+					}
+
+					if strings.Index(ln, "Statistics Info") == 0 {
+						Debug("Statistic Info channel ")
+						mych = StatsInfoCh
+					}
+					if strings.Index(ln, "Cfg Info") == 0 {
+						Debug("Cfg Info channel ")
+						mych = CfgInfoCh
+					}
+
+					lninfo := lineData{servername, origTxt, servername}
+					mych <- lninfo
+
+					// All the end to determine the end of Channel
+					if strings.Contains(ln, "maxPortDescrLimit") {
+						// Place HOlder till we find new channel
+						mych = JunkCh
+					}
+
+				}
+				if err := scanner.Err(); err != nil {
+					Debug("Err:", err.Error())
+				}
+			}(f, servername, JunkCh)
+		}
+		return nil
+	})
+	return nil
 }
 func readFromStdin() {
 
+	// Keyboard Input
 	stdscanner := bufio.NewScanner(os.Stdin)
 	for {
+		time.Sleep(time.Second * 2)
 		Input("Enter 1 to dump macdb")
 		Input("Enter 2 to dump pindb")
 		Input("Enter 3 to dump pcldb")
-		Input("Enter 4 to enter mac,vlan")
-		Input("Enter 5 to servername,port")
+		Input("Enter 4 to Dump all Errors")
+		Input("Enter 5 to Read All input files again")
+		Input("Enter 6 to  Dump System Platform Info")
 		Input("Enter 7 to exit")
 		stdscanner.Scan()
 		ln := stdscanner.Text()
 		Input("Selected Choice is ", ln)
+		if strings.TrimSpace(ln) == "" {
+			continue
+		}
 		if val, err := strconv.Atoi(ln); err == nil {
-			if val == 1 {
+
+			switch val {
+			case 1:
 				Dump("Dump MAC db ")
 				macvlan := MacVlan{}
 				sendOnToReadCh(macvlan)
-			}
-			if val == 2 {
+			case 2:
 				Dump("Dump Pin db ")
 				pin := PinInfo{}
 				sendOnToReadCh(pin)
-			}
-			if val == 3 {
+			case 3:
 				Dump("Dump Pcl db ")
 				pcl := pcldata{}
 				sendOnToReadCh(pcl)
-			}
+			case 4:
+				Dump("Dump Errors from File")
+				DumpErrors()
+			case 5:
+				Dump("Read all files again ..Reset all DS")
+				resetDB()
+				Gdata.ReadFilesCh <- struct{}{}
+			case 6:
+				Dump("System Info Dump")
+				sysinfo := SystemInfo{}
+				sendOnToReadCh(sysinfo)
 
-			if val == 7 {
+			case 7:
 				Debug("Exiting")
 				return
 			}
@@ -367,6 +463,12 @@ func ProcessDataStructures() {
 func printFromDatabase(wdata interface{}) {
 	Dump("PrintfromDatabase")
 	switch wdata.(type) {
+	case SystemInfo:
+		Dump("SystemInfo:Dump")
+		for key, value := range SystemMap {
+			Dump(key, value)
+		}
+
 	case MacVlan:
 		Dump("MacVlan:Dump")
 		for key, value := range Gdata.FDB {
@@ -427,6 +529,13 @@ func buildDatabase(wdata interface{}) {
 	case pcldata:
 		pata := wdata.(pcldata)
 		Gdata.PclSlice = append(Gdata.PclSlice, pata)
+	case MyError:
+		errdata := wdata.(MyError)
+		MyErrSlice = append(MyErrSlice, errdata)
+	case MyInfo:
+		infodata := wdata.(MyInfo)
+		MyInfoSlice = append(MyInfoSlice, infodata)
+
 	default:
 		Debug("Writeing to database failed - Unknown type")
 	}
