@@ -3,7 +3,7 @@ HARDWARE DEBUG/NCD DEBUG
         1) Temp directory [/tmp/Raju/ will get deleted with time. So 
             create this folder
         2) Input file should be with *.txt extension and the name better
-            should be like appserv93.txt 
+            should be like appserv93.<Raju>.txt 
         3) If using different systems, rename each file with it's name 
             and copy it there
         4) ncdutils -a and copy the output into this files
@@ -73,11 +73,20 @@ DESIGN
         value: server,port
 
 DEBUG LIVE SWITCH
-    ./rajuDiag.sh appserv93 appserv94
+    ./rajuDiag.sh appserv93 appserv94 appserv95
+        CHange this script to include the given serverr
     # don't run it as rajuDiag.sh app..use ./
     1) This will run diah.sh on each of the remote servers. This check 
         for status of Services and collect logs (bosun,convoy and armada) 
         and sort those files by time into single file [ rajumerged.txt ]
+        TODO : Check master and don't look for convoy logs there
     2) This create rajumerged.txt file in each of the server /home/diamanti
-    3) that file is copied to this folder as appserv93Raju.txt..etc
-    4) Embedded Commnand output is copied to appserv93RajuEmbed.txt
+    3) that file is copied to folder Temp as appserv93Raju.txt..etc
+    4) Embedded Commnand output is copied to ncdutil.log in Same Temp
+    5) ./hwdiag -path=/Users/rajuv/vgraju/git/Work/Diamanti/Temp
+PACKET DECODE
+    LUA-CLI-User-Guide.pdf
+    ENABLE LUACLI AND CAPTURE THE PACKET USING 
+    1) TRAFFICE#capture on port 0/0
+    2) Copy the data into InputFiles/pktinput.txt
+    3) go run pktDecode.go

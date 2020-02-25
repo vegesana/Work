@@ -9,11 +9,10 @@ for arg in "$@"; do
     cat diag.sh | sshpass -p $password ssh diamanti@"$arg"
     cat cmdline.sh | sshpass -p $password ssh diamanti@"$arg"
     mkdir -p "Temp/$arg"
-    file1="Temp/$arg/${arg}Raju.txt"
-    file2="Temp/$arg/ncdutil.log"
-    file3="Temp/$arg/boardinfo.log"
-    sshpass -p $password scp diamanti@"$arg":/home/diamanti/rajumerged.txt $file1
-    sshpass -p $password scp diamanti@"$arg":/home/diamanti/ncdutil.log $file2
-    sshpass -p $password scp diamanti@"$arg":/home/diamanti/boardinfo.log $file3
+    Dir1="Temp/$arg/${arg}Raju.txt"
+    Dir="Temp/$arg/"
+    sshpass -p $password scp diamanti@"$arg":/home/diamanti/rajumerged.txt $Dir1
+    sshpass -p $password scp diamanti@"$arg":/home/diamanti/ncdutil.log $Dir
+    sshpass -p $password scp diamanti@"$arg":/home/diamanti/boardinfo.log $Dir
 done
 
