@@ -1,5 +1,0 @@
-nm_hello: 1, nm_query_portcfg: 1, nm_heartbeat: 99,nm_query_switchcfg: 1, nm_query_boardinfo: 1, nm_config_switchif: 0, nm_disconnect: 0
-    nm_vtep_create: 0, nm_vtep_delete: 0, nm_create_local_if: 68, nm_delete_local_if: 64, nm_query_local_if: 2, nm_create_remote_if: 0
-    nm_delete_remote_if: 0, nm_create_remote_vtep: 0, nm_delete_remote_vtep: 0, nm_enable_vlan: 2, nm_disable_vlan: 4, nm_query_vlan: 2
-    nm_enable_vxlan: 0, nm_disable_vxlan: 0, nm_add_entry_vxlan: 0, nm_remove_entry_vxlan: 0, nm_add_qostemplate: 3, nm_remove_qostemplate: 0
-    nm_update_qostemplate: 0, nm_query_network_stats: 0 conduit_timeout_cnt: 92382

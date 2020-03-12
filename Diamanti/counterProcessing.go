@@ -31,7 +31,6 @@ func counterHandler(name string, data string) {
 
 	filename := "CounterTemplate.txt"
 	Debug("Raju: CounterFun:", name, data)
-	// expression := `\s+Port: (\d+)\s+Good UC Pkt Rcvd:\s+(\d+)`
 	expression, keyslice := GetRegExp(filename)
 	r, _ := regexp.Compile(expression)
 	if result := r.FindAllStringSubmatch(data, -1); len(result) != 0 {
