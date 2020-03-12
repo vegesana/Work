@@ -1,3 +1,7 @@
 hwdiag
 debug.log
 test.go
+DebugTool/bin/
+DebugTool/src/github.com/
+DebugTool/src/golang.org
+DebugTool/src/honnef.co

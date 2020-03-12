@@ -3,7 +3,6 @@ package main
 // TextProcessingTool.pdf
 import (
 	"bufio"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -144,17 +143,20 @@ func resetDB() {
 	Gdata.PinDB = map[GPort]GPort{}
 	MyErrSlice = nil
 	MyInfoSlice = nil
+	SystemMap = nil
+	SystemMap = map[string]SystemInfo{}
+
 }
 
 func main() {
 
 	tempDir = "/tmp/Raju/"
-	inputDir = "/Users/rajuv/Techsupport/6052"
+	inputDir = "/Users/rajuv/vgraju/git/Work/Diamanti/"
 	SystemMap = map[string]SystemInfo{}
 	defer myfile.Close()
 	defer errfile.Close()
 
-	pathValue := flag.String("path", "/Users/rajuv/Techsupport/6052",
+	pathValue := flag.String("path", "/Users/rajuv/vgraju/git/Work/Diamanti",
 		"Directoy Path")
 	flag.Parse()
 	fmt.Println("Curnt Path is ", *pathValue)
@@ -163,8 +165,6 @@ func main() {
 	myfile, _ = os.OpenFile(tempDir+"debug.log", os.O_WRONLY|os.O_CREATE, 0666)
 	errfile, _ = os.OpenFile(tempDir+"error.log", os.O_WRONLY|os.O_CREATE, 0666)
 
-	err := getFileContents("boardinfo.log")
-	Debug("boardinfo.log file error is ", err)
 	FileDB = map[string]FInfo{}
 	TempIntfInfo = map[string]string{}
 	TempCntrInfo = map[string]string{}
@@ -182,6 +182,14 @@ func main() {
 	Gdata.ReadFilesCh = make(chan interface{}) // Blocking Read
 
 	go ProcessDataStructures()
+
+	// Go through each subdir and look for the required files in each
+	// subdir. Based on file name - process it different. i.e
+	// if the file name is boardinfo.log - update the systeminfo, if the
+	// file is ncdutuil.log - then update hte MACDB/FDB DB etc.
+	// We will know the name of the server from teh path. So the
+	// File path must containt the DUT Name as appserv93 etc.
+	loopThroughAllFilesInAllSubDir()
 
 	JunkCh = make(chan interface{}, Gdata.BufSize)
 	CounterCh = make(chan interface{}, Gdata.BufSize)
@@ -218,7 +226,7 @@ func main() {
 			// This check whether anything got changed
 			// in the file or any new file added ??
 			case <-Gdata.ReadFilesCh:
-				readLogFiles("ncdutil.log")
+				loopThroughAllFilesInAllSubDir()
 			}
 		}
 	}()
@@ -255,137 +263,159 @@ func getServerNameFromPath(path string) string {
 	return value
 }
 
-func getFileContents(filename string) error {
+func loopThroughAllFilesInAllSubDir() error {
 
 	var servername string
-	err := errors.New("File not found")
 
-	tempDir := map[string]struct{}{}
 	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
 
-		if info.Name() == filename {
-			err = nil
-			if servername = getServerNameFromPath(path); servername == "" {
-				Error("No Name with appserv found in path", path)
-				return nil
-			}
-			if _, ok := tempDir[servername]; ok {
-				fmt.Println("File path already exits", path)
-				Debug("File path already exits", path)
-				return nil
-			}
-			tempDir[servername] = struct{}{}
-			f, _ := os.Open(path)
-			allText, _ := ioutil.ReadAll(f)
-			productid := getValueOfStr(string(allText), "Product id", ":")
-			board := getValueOfStr(string(allText), "Board", ":")
+		if servername = getServerNameFromPath(path); servername != "" {
 
-			SystemMap[servername] = SystemInfo{board, productid}
+			/* If boardinfo exits, then process it */
+			if info.Name() == "boardinfo.log" {
+				processBoardInfo(path, servername)
+			}
 
-			return nil
+			if info.Name() == "ncdutil.log" {
+				processNcdUtil(path, servername)
+			}
+
+			if info.Name() == "fwdcounters.log" {
+				processFwdCounters(path, servername)
+			}
+			if info.Name() == "btputil.log" {
+				processBtpUtil(path, servername)
+			}
+
 		}
 		return nil
 	})
-	return err
+	return nil
 }
-func readLogFiles(filename string) error {
-	var servername string
-	// Host name is file name
-	Debug("Reading all NCD files")
-	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			Error("FIlepaqqth walk failed")
-			return err
-		}
 
-		if info.Name() == filename {
-			if servername = getServerNameFromPath(path); servername == "" {
-				Error("No Name with appserv found in path", path)
-				return nil
+func processFwdCounters(path string, servername string) error {
+	/* Check err */
+	f, _ := os.Open(path)
+	r := regexp.MustCompile(`[ ]+`)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "errors") || strings.Contains(line, "drop") {
+			val := r.Split(line, -1)
+
+			if len(val) > 0 {
+				for i, value := range val[1:] {
+					if value != "0000000000000000" {
+						errstr := fmt.Sprintf("Server:%s:If:eth%d Error:%s,Count:%s\n",
+							servername, i, strings.TrimSpace(val[0]), value)
+						SendError(errstr)
+					}
+				}
+
 			}
-			Debug("File Path is ", path)
-			f, _ := os.Open(path)
-			go func(f *os.File, servername string, mych chan interface{}) {
-				scanner := bufio.NewScanner(f)
-				for scanner.Scan() {
-					origTxt := scanner.Text()
-					ln := strings.TrimSpace(origTxt)
-
-					if strings.Index(ln, "Counters Info:") == 0 {
-						Debug("Picked Counter Channel")
-						mych = CounterCh
-					}
-
-					if strings.Index(ln, "QOS Info:") == 0 {
-						Debug("Picked Qos Channel")
-						mych = CounterCh
-					}
-
-					if strings.Index(ln, "Network Interface Info") == 0 {
-						Debug("Picked Network Interface Channel")
-						mych = NetworkInfoCh
-					}
-
-					if strings.Index(ln, "NIC Interface Info") == 0 {
-						Debug("Picked Network Interface Channel")
-						mych = NicInfoCh
-					}
-
-					if strings.Index(ln, "NVMEOE Interface Info") == 0 {
-						Debug("NVMEOE Interface Info channel ")
-						mych = NvmInfoCh
-					}
-					if strings.Index(ln, "VLAN Info") == 0 {
-						Debug("Vlan Info channel ")
-						mych = VlanInfoCh
-					}
-					if strings.Index(ln, "MAC Info") == 0 {
-						Debug("MAC Info channel ")
-						mych = MacInfoCh
-					}
-					if strings.Index(ln, "PCL Info") == 0 {
-						Debug("PCL Info channel ")
-						mych = PclInfoCh
-					}
-					if strings.Index(ln, "Interface Info") == 0 {
-						Debug("Interface Info channel ")
-						mych = IntfInfoCh
-					}
-					if strings.Index(ln, "LIF Interface Info") == 0 {
-						Debug("Lif interface Info channel ")
-						mych = LifInfoCh
-					}
-					if strings.Index(ln, "NIF Interface Info") == 0 {
-						Debug("Lif interface Info channel ")
-						mych = NifInfoCh
-					}
-
-					if strings.Index(ln, "Statistics Info") == 0 {
-						Debug("Statistic Info channel ")
-						mych = StatsInfoCh
-					}
-					if strings.Index(ln, "Cfg Info") == 0 {
-						Debug("Cfg Info channel ")
-						mych = CfgInfoCh
-					}
-
-					lninfo := lineData{servername, origTxt, servername}
-					mych <- lninfo
-
-					// All the end to determine the end of Channel
-					if strings.Contains(ln, "maxPortDescrLimit") {
-						// Place HOlder till we find new channel
-						mych = JunkCh
-					}
-
-				}
-				if err := scanner.Err(); err != nil {
-					Debug("Err:", err.Error())
-				}
-			}(f, servername, JunkCh)
 		}
+	}
+	return nil
+}
+
+func processBoardInfo(path string, servername string) error {
+
+	if _, ok := SystemMap[servername]; ok {
+		fmt.Println("New Path that is aready exist", path)
+		Debug("File path already exits", path)
 		return nil
-	})
+	}
+
+	f, _ := os.Open(path)
+	allText, _ := ioutil.ReadAll(f)
+	productid := getValueOfStr(string(allText), "Product id", ":")
+	board := getValueOfStr(string(allText), "Board", ":")
+
+	SystemMap[servername] = SystemInfo{board, productid}
+
+	return nil
+}
+func processNcdUtil(path string, servername string) error {
+
+	f, _ := os.Open(path)
+	go func(f *os.File, servername string, mych chan interface{}) {
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			origTxt := scanner.Text()
+			ln := strings.TrimSpace(origTxt)
+
+			if strings.Index(ln, "Counters Info:") == 0 {
+				Debug("Picked Counter Channel")
+				mych = CounterCh
+			}
+
+			if strings.Index(ln, "QOS Info:") == 0 {
+				Debug("Picked Qos Channel")
+				mych = CounterCh
+			}
+
+			if strings.Index(ln, "Network Interface Info") == 0 {
+				Debug("Picked Network Interface Channel")
+				mych = NetworkInfoCh
+			}
+
+			if strings.Index(ln, "NIC Interface Info") == 0 {
+				Debug("Picked Network Interface Channel")
+				mych = NicInfoCh
+			}
+
+			if strings.Index(ln, "NVMEOE Interface Info") == 0 {
+				Debug("NVMEOE Interface Info channel ")
+				mych = NvmInfoCh
+			}
+			if strings.Index(ln, "VLAN Info") == 0 {
+				Debug("Vlan Info channel ")
+				mych = VlanInfoCh
+			}
+			if strings.Index(ln, "MAC Info") == 0 {
+				Debug("MAC Info channel ")
+				mych = MacInfoCh
+			}
+			if strings.Index(ln, "PCL Info") == 0 {
+				Debug("PCL Info channel ")
+				mych = PclInfoCh
+			}
+			if strings.Index(ln, "Interface Info") == 0 {
+				Debug("Interface Info channel ")
+				mych = IntfInfoCh
+			}
+			if strings.Index(ln, "LIF Interface Info") == 0 {
+				Debug("Lif interface Info channel ")
+				mych = LifInfoCh
+			}
+			if strings.Index(ln, "NIF Interface Info") == 0 {
+				Debug("Lif interface Info channel ")
+				mych = NifInfoCh
+			}
+
+			if strings.Index(ln, "Statistics Info") == 0 {
+				Debug("Statistic Info channel ")
+				mych = StatsInfoCh
+			}
+			if strings.Index(ln, "Cfg Info") == 0 {
+				Debug("Cfg Info channel ")
+				mych = CfgInfoCh
+			}
+
+			lninfo := lineData{servername, origTxt, servername}
+			mych <- lninfo
+
+			// All the end to determine the end of Channel
+			if strings.Contains(ln, "maxPortDescrLimit") {
+				// Place HOlder till we find new channel
+				mych = JunkCh
+			}
+
+		}
+		if err := scanner.Err(); err != nil {
+			Debug("Err:", err.Error())
+		}
+	}(f, servername, JunkCh)
 	return nil
 }
 func readFromStdin() {
@@ -400,13 +430,16 @@ func readFromStdin() {
 		Input("Enter 4 to Dump all Errors")
 		Input("Enter 5 to Read All input files again")
 		Input("Enter 6 to  Dump System Platform Info")
-		Input("Enter 7 to exit")
+		Input("Enter 7 to  Start timer ")
+		Input("Enter 9 to exit")
 		stdscanner.Scan()
 		ln := stdscanner.Text()
 		Input("Selected Choice is ", ln)
 		if strings.TrimSpace(ln) == "" {
 			continue
 		}
+
+		// Stop an timer that is dumping data
 		if val, err := strconv.Atoi(ln); err == nil {
 
 			switch val {
@@ -433,8 +466,10 @@ func readFromStdin() {
 				Dump("System Info Dump")
 				sysinfo := SystemInfo{}
 				sendOnToReadCh(sysinfo)
-
 			case 7:
+				Dump("Start Timer to DUMP ")
+
+			case 9:
 				Debug("Exiting")
 				return
 			}

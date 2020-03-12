@@ -1,0 +1,148 @@
+Lport 3:
+        Session 1:
+            Hash table entry key pointer:             0x80000001c8800320
+            Hash table entry value pointer:           0x80000001c8800300
+            Local mac address:                        e8:66:c4:04:0a:6b
+            Remote mac address:                       e8:66:c4:04:0a:71
+            GW mac address:                           e8:66:c4:04:0a:71
+            vxlan flag:                               1
+            Local IP :                                10.168.1.9
+            Remote IP :                               10.168.1.4
+            Gateway IP :                              0.0.0.0
+            vlan :                                    496
+            vni:                                      1234
+            Channel ID:                               8
+            allocated:                                0
+            config_xid:                               0
+            BTP Ping Sequence ID:                     a7d6d2
+            BTP ping FSM state:                       1
+            Session State:                            0
+            RS login Sequence ID:                     ff885e
+            RS login state:                           1
+            RS login retry count:                     0
+            RS login timeout SA timer:                0
+            Ping retry counter:                       0
+            Ping timeout SA timer:                    0
+            Reference Count:                          1
+            MTU:                                      0
+            Number of queued NVMEoE command frames:   0
+            Number of queued NVMEoE control frames:   0
+            Number of queued NVMEoE data frames:      0
+            Current available NVMEoE control credits: 16
+            Current available NVMEoE data credits:    16
+
+            BTP Sender Role:
+            Last burst id:                            c5409b
+            Last seq id:                              0
+            BTP Role Type:                            1
+            state:                                    0
+            error_tov:                                c350
+            ERROR_TOV timer :                         0
+            ********  ( Previous Burst Window ) *********
+            allocated:                                0
+            Burst id:                                 0
+            num_seqs:                                 0
+            exp_pkts:                                 0
+            BTP seq:
+            ********  ( Current Burst Window )  *********
+            allocated:                                0
+            Burst id:                                 0
+            num_seqs:                                 0
+            exp_pkts:                                 0
+            BTP seq:
+
+            BTP Receiver Role:
+            Last burst id:                            0
+            Last seq id:                              0
+            BTP Role Type:                            2
+            state:                                    0
+            error_tov:                                c350
+            ERROR_TOV timer :                         0
+            ********  ( Previous Burst Window )  *********
+            allocated:                                0
+            Burst id:                                 0
+            num_seqs:                                 0
+            exp_pkts:                                 0
+            BTP seq:
+            ********  ( Current Burst Window )  *********
+            allocated:                                0
+            Burst id:                                 0
+            num_seqs:                                 0
+            exp_pkts:                                 0
+            BTP seq:
+            BTP Burst Window Histrogram:
+             Seq[0]: 0
+                Seq[1]: 0
+                Seq[2]: 0
+                Seq[3]: 0
+                Seq[4]: 0
+                Seq[5]: 0
+                Seq[6]: 0
+                Seq[7]: 0
+                Seq[8]: 0
+                Seq[9]: 0
+                Seq[10]: 0
+                Seq[11]: 0
+                Seq[12]: 0
+                Seq[13]: 0
+                Seq[14]: 0
+                Seq[15]: 0
+                Seq[16]: 0
+                Seq[17]: 0
+                Seq[18]: 0
+                Seq[19]: 0
+                Seq[20]: 0
+                Seq[21]: 0
+                Seq[22]: 0
+                Seq[23]: 0
+                Seq[24]: 0
+                Seq[25]: 0
+                Seq[26]: 0
+                Seq[27]: 0
+                Seq[28]: 0
+                Seq[29]: 0
+                Seq[30]: 0
+                Seq[31]: 0
+                Seq[32]: 0
+                Seq[33]: 0
+                Seq[34]: 0
+                Seq[35]: 0
+                Seq[36]: 0
+                 Seq[37]: 0
+                Seq[38]: 0
+                Seq[39]: 0
+                Seq[40]: 0
+                Seq[41]: 0
+                Seq[42]: 0
+                Seq[43]: 0
+                Seq[44]: 0
+                Seq[45]: 0
+                Seq[46]: 0
+                Seq[47]: 0
+                Seq[48]: 0
+                Seq[49]: 0
+                Seq[50]: 0
+                Seq[51]: 0
+                Seq[52]: 0
+                Seq[53]: 0
+                Seq[54]: 0
+                Seq[55]: 0
+                Seq[56]: 0
+                Seq[57]: 0
+                Seq[58]: 0
+                Seq[59]: 0
+                Seq[60]: 0
+                Seq[61]: 0
+                Seq[62]: 0
+                Seq[63]: 0
+            BTP Total Packets:                        0
+            BTP Command credits not granted:          0
+            BTP Data credits not granted:             0
+            BTP Control credits not granted:          0
+            BTP Command credits granted:              0
+            BTP Data credits granted:                 0
+            BTP Control credits granted:              0
+            BTP Number of cancel recievd for cmd:     0
+            BTP Command Recieved packets:             0
+            BTP Number of retried packets:            0
+

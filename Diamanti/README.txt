@@ -1,4 +1,4 @@
-HARDWARE DEBUG/NCD DEBUG
+ARDWARE DEBUG/NCD DEBUG
     INPUT
         1) Temp directory [/tmp/Raju/ will get deleted with time. So 
             create this folder
@@ -62,6 +62,18 @@ STATISTICS
                         curr_uptime, skipper_cfg_info.hb_uptime);
 DESIGN
     TextProcessingTool.pdf
+    SystemMap : Map["appserv93"]SystemInfo
+        key is Node Name
+    pathValue 
+        Specify the directory path from which to find and read the required
+            files
+        usage: ./hwdiag -path="full/dir/path/"
+    tempDir :
+        Look into this dir for any logs or error during this tool run
+    loopThroughAllFilesInAllSubDir 
+        This API will loop through all the files in all the subdir in the 
+            input dir. We can look for what ever file we want and do 
+            the processing based on the file name
     FDB Database
         key:Mac,vlan 
         Value :  Map[Gport] Map of Gports

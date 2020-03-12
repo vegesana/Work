@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# PLEASE RUN ON SECURECRT
 password=diamanti
 if [ "$#" -lt 1 ] ; then
         echo "Must pass at least one server name"
