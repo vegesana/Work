@@ -18,6 +18,14 @@ type VSession struct {
 	session string
 }
 
+type MacInfo struct {
+	fileName string
+	mac      string
+	vlan     string
+	isStatic string
+	portNum  string
+	Index    int
+}
 type SystemInfo struct {
 	BoardInfo  string
 	ProductId  string
@@ -28,6 +36,11 @@ type ReadData struct {
 	rchan chan interface{}
 }
 
+type lineData struct {
+	filename string
+	line     string
+	hostname string
+}
 type pcldata struct {
 	filename string
 	line     string
@@ -70,6 +83,10 @@ var Gdata GlobalData
 var btpUtilMap map[Key]string
 var AllStringKeyMap map[string]struct{}
 
+var JunkCh chan interface{}
+var NetworkInfoCh chan interface{}
+var MacInfoCh chan interface{}
+
 type MyError struct {
 	ServerName string
 	MyErr      string
@@ -95,9 +112,23 @@ func init() {
 	dbWriteCh = make(chan interface{})
 	dbReadCh = make(chan ReadData, SIZE)
 	MyErrSlice = make([]MyError, 0)
+
 	Gdata = GlobalData{}
+	Gdata.BufSize = 20
+
+	Gdata.FDB = map[MacVlan]map[GPort]struct{}{}
+	Gdata.PortDB = map[GPort]map[MacVlan]struct{}{}
+	Gdata.VlanDB = map[GVlan]map[GPort]struct{}{}
+
+	JunkCh = make(chan interface{}, Gdata.BufSize)
+	NetworkInfoCh = make(chan interface{}, Gdata.BufSize)
+	MacInfoCh = make(chan interface{}, Gdata.BufSize)
 
 	go readWriteGoRoutine()
+
+	go goRoutine("Junk", JunkCh, nil)
+	go goRoutine("Network Info", NetworkInfoCh, NetworkInfoFun)
+	go goRoutine("Mac Info", MacInfoCh, MacInfoFun)
 
 	// Start a Go routine to update the DATABASES and also
 	// to get the data from DB
@@ -132,10 +163,11 @@ func loopThroughAllFilesInAllSubDir(inputDir string) error {
 			if info.Name() == "btputil.log" {
 				go processBtpUtil(path, servername)
 			}
-
-			if info.Name() == "ncdutil.log" {
-				processNcdUtil(path, servername)
-			}
+			/*
+				if info.Name() == "ncdutil.log" {
+					go processNcdUtil(path, servername)
+				}
+			*/
 		}
 		return nil
 	})
@@ -152,6 +184,37 @@ func writeToDBBackend(wval interface{}) {
 	case MyError:
 		myerr := wval.(MyError)
 		MyErrSlice = append(MyErrSlice, myerr)
+	case MacInfo:
+		/* we are buidling 2 data based here */
+		macdata := wval.(MacInfo)
+		macvlankey := MacVlan{mac: macdata.mac, vlan: macdata.vlan}
+		subkey := GPort{macdata.fileName, macdata.portNum}
+		if value, ok := Gdata.FDB[macvlankey]; !ok {
+			Gdata.FDB[macvlankey] = make(map[GPort]struct{})
+			Gdata.FDB[macvlankey][subkey] = struct{}{}
+		} else {
+			if newval, ok := value[subkey]; !ok {
+				value[subkey] = struct{}{}
+				Gdata.FDB[macvlankey] = value
+			} else {
+				Debug("Value already part of map", newval)
+			}
+		}
+		Debug("BUILD MACINFO", Gdata.FDB)
+
+		if value, ok := Gdata.PortDB[subkey]; !ok {
+			Gdata.PortDB[subkey] = make(map[MacVlan]struct{})
+			Gdata.PortDB[subkey][macvlankey] = struct{}{}
+		} else {
+			if newval, ok := value[macvlankey]; !ok {
+				value[macvlankey] = struct{}{}
+				Gdata.PortDB[subkey] = value
+			} else {
+				Debug("Value already part of map", newval)
+			}
+		}
+		Debug("BUILD PortDB", Gdata.PortDB)
+		fmt.Println("Bulding MAC and FDB DB DONE")
 	default:
 		fmt.Println("Write of unknown type ")
 	}
