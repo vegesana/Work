@@ -63,9 +63,9 @@ func DumpBtpErrors(servername string) {
 				value, _ := strconv.Atoi(v)
 				if value != 1 {
 					/*
-						1: Initally and after we get response
-							we will move to this state
-						2: Ping sent but waiting for response
+						d	1: Initally and after we get response
+								we will move to this state
+							2: Ping sent but waiting for response
 					*/
 					reason := "Session Ping not in Good state"
 					err := fmt.Sprintf("%s:<lport:%s,sess:%s>, val:%d: %s\n",
@@ -117,9 +117,10 @@ func processBtpUtil(path string, servername string) error {
 	var lport, session string
 	f, _ := os.Open(path)
 	scanner := bufio.NewScanner(f)
+	re := regexp.MustCompile(`Lport (\d+)+`)
+	re1 := regexp.MustCompile(`Session (\d+)+`)
 	for scanner.Scan() {
 		line := scanner.Text()
-		re := regexp.MustCompile(`Lport (\d+)+`)
 		lslice := re.FindStringSubmatch(line)
 		if len(lslice) > 1 {
 			lstart = true
@@ -127,8 +128,7 @@ func processBtpUtil(path string, servername string) error {
 			continue
 		}
 		if lstart {
-			re := regexp.MustCompile(`Session (\d+)+`)
-			lslice := re.FindStringSubmatch(line)
+			lslice := re1.FindStringSubmatch(line)
 			if len(lslice) > 1 {
 				sstart = true
 				session = lslice[1]
@@ -149,6 +149,8 @@ func processBtpUtil(path string, servername string) error {
 		}
 
 	}
+
+	fmt.Println("End of btp rpocessing", path)
 	DumpBtpErrors(servername)
 	return nil
 }

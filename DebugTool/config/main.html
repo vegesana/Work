@@ -58,211 +58,24 @@
         <p>Click on the buttons inside the tabbed menu:</p>
 
         <div class="tab">
-            <button class="tablinks" onclick="openCity(event, 'VLAN')">VLAN</button>
-            <button class="tablinks" onclick="openCity(event, 'VRF')">VRF</button>
-            <button class="tablinks" onclick="openCity(event, 'IPV4')">IPV4</button>
-            <button class="tablinks" onclick="openCity(event, 'IPV6')">IPV6</button>
-            <button class="tablinks" onclick="openCity(event, 'LOOPBACK')">LOOPBACK</button>
-            <button class="tablinks" onclick="openCity(event, 'PORT')">PORT</button>
+            <button class="tablinks" onclick="openCity(event, 'DEBUG')">DEBUG</button>
             <button class="tablinks" onclick="openCity(event, 'TESTCASES')">TESTCASES</button>
         </div>
 
-        <div id="IPV6" class="tabcontent">
-        <h3>IPV6 Create and Delete </h3>
-        <form action="/ipv6submit" method="post">
+        <div id="DEBUG" class="tabcontent">
+         <h3>Give the Full Debug Path</h3>
+        <form action="/debugsubmit" method="post">
             <h2>
                 <table style="width:20%">
                     <tr>
-                        <td> <label> DUT: </label> </td>
-                        <td> <input type="text" name="dut"> </td>
-                    </tr>
-                    <tr>
-                        <td> <label> IP Addr: </label> </td>
-                        <td> <input type="text" name="ipaddr"> </td>
-                    </tr>
-                    <tr>
-                        <td> <label> VRF : </label> </td>
-                        <td> <input type="text" name="vrf" value="vrf-default"> </tb>
-                    </tr>
-                    <tr>
-                        <td><label> Intfref: </label> </td>
-                        <td><input type="text" name="intref"></td>
-                    </tr>
-                    <tr>
-                        <td><label> Adminstate: </label> </td>
-                        <td><select name="adminstate"> <br><br>
-                            <option value="UP">UP</option>
-                            <option value="DOWN">DOWN</option>
-                            </select> </td>
+                        <td><label> Debug Path: </label> </td>
+                        <td><input type="text" name="path" size="30" value="/Users/rajuv/vgraju/git/Work/Diamanti/"> <br></td>
                     </tr>
                 </table>
             </h2>
-                <button class="btn success" name=ipv6cmd value="IPV6Create" >IPV6 Create</button>
-                <button class="btn danger" name=ipv6cmd value="IPV6Delete" > IPV6 Delete </button>
-                <button class="btn semi" name=ipv6cmd value="IPV6Update" > IPV6 Update</button>
+                <button class="btn success" name=debugcmd value="DebugStart" >Submit</button>
+                <button class="btn danger" name=debugcmd value="DebugClear" > Clear</button>
         </form>
-        </div>
-
-
-        <div id="IPV4" class="tabcontent">
-        <h3>IPV4 Create and Delete </h3>
-        <form action="/ipv4submit" method="post">
-            <h2>
-                <table style="width:20%">
-                    <tr>
-                        <td> <label> DUT: </label> </td>
-                        <td> <input type="text" name="dut"> </td>
-                    </tr>
-                    <tr>
-                        <td> <label> IP Addr: </label> </td>
-                        <td> <input type="text" name="ipaddr"> </td>
-                    </tr>
-                    <tr>
-                        <td> <label> VRF : </label> </td>
-                        <td> <input type="text" name="vrf" value="vrf-default"> </tb>
-                    </tr>
-                    <tr>
-                        <td><label> Intfref: </label> </td>
-                        <td><input type="text" name="intref"></td>
-                    </tr>
-                    <tr>
-                        <td><label> Adminstate: </label> </td>
-                        <td><select name="adminstate"> <br><br>
-                            <option value="UP">UP</option>
-                            <option value="DOWN">DOWN</option>
-                            </select> </td>
-                    </tr>
-                </table>
-            </h2>
-                <button class="btn success" name=ipv4cmd value="IPV4Create" >IPV4 Create</button>
-                <button class="btn danger" name=ipv4cmd value="IPV4Delete" > IPV4 Delete </button>
-                <button class="btn semi" name=ipv4cmd value="IPV4Update" > IPV4 Update</button>
-        </form>
-        </div>
-
-        <div id="VLAN" class="tabcontent">
-         <h3>Vlan Configuration and Removal </h3>
-        <form action="/vlansubmit" method="post">
-            <h2>
-                <table style="width:20%">
-                    <tr>
-                        <td><label> DUT: </label> </td>
-                        <td><input type="text" name="dut"> <br></td>
-                    </tr>
-                    <tr>
-                        <td><label> Vlan ID : </label> </td>
-                        <td><input type="text" name="vlanid"> <br></td>
-                    </tr>
-                    <tr>
-                        <td><label> Tag Port List: </label> </td>
-                        <td><input type="text" name="tportlist"> </td>
-                    </tr>
-                    <tr>
-                        <td> <label> UnTag Port List: </label> </td>
-                        <td> <input type="text" name="untagportlist"> </td>
-                    </tr>
-                    <tr>
-                        <td><label> Adminstate: </label> </td>
-                            <td><select name="adminstate"> <br><br>
-                        <option value="UP">UP</option>
-                        <option value="DOWN">DOWN</option>
-                                </select> </td>
-                    </tr>
-                </table>
-            </h2>
-                <button class="btn success" name=vlancmd value="VlanCreate" >Vlan Create</button>
-                <button class="btn danger" name=vlancmd value="VlanDelete" > Vlan Delete </button>
-                <button class="btn semi" name=vlancmd value="VlanUpdate" > Vlan Update </button>
-        </form>
-        </div>
-
-        <div id="VRF" class="tabcontent">
-         <h3>Vrf Configuration Form 1</h3>
-            <form action="/vrfsubmit" method="post">
-                <h2>
-                    <table style="width:20%">
-                        <tr>
-                            <td><label> DUT: </label> </td>
-                            <td><input type="text" name="dut"> <br></td>
-                        </tr>
-                        <tr>
-                            <td><label> VRFName: </label> </td>
-                            <td><input type="text" name="vrf"> <br></td>
-                        </tr>
-                   </table>
-                </h2>
-                    <button class="btn success" name=vrfcmd value="VrfCreate" >VRF Create</button>
-                    <button class="btn danger" name=vrfcmd value="VrfDelete" > VRF Delete </button>
-            </form>
-        </div>
-
-        <div id="PORT" class="tabcontent">
-         <h3>PORT Configuration Form </h3>
-            <form action="/portsubmit" method="post">
-                <h2>
-                    <table style="width:20%">
-                        <tr>
-                            <td><label> DUT: </label> </td>
-                            <td><input type="text" name="dut"> </td>
-                        </tr>
-                        <tr>
-                            <td><label> PORTS: </label> </td>
-                            <td><input type="text" name="ports"> </td>
-                        </tr>
-                        <tr>
-                            <td><label> SPEED </label> </td>
-                            <td><input type="text" name="speed" value=40000> </td>
-                        </tr>
-
-                        <tr>
-                          <td><label> Adminstate: </label> </td>
-                            <td><select name="adminstate"> <br><br>
-                             <option value="UP">UP</option>
-                            <option value="DOWN">DOWN</option>
-                           </select> </td>
-                        </tr>
-                         <tr>
-                          <td><label> DhcpEnable: </label> </td>
-                            <td><select name="dhcpenabled"> <br><br>
-                             <option value="false">FALSE</option>
-                            <option value="true">TRUE</option>
-                           </select> </td>
-                        </tr>
-
-                   </table>
-                </h2>
-                    <button class="btn success" name=portcmd value="portupdate" >UPDATE</button>
-            </form>
-        </div>
-
-
-        <div id="LOOPBACK" class="tabcontent">
-         <h3>LOOPBACK Configuration Form </h3>
-            <form action="/losubmit" method="post">
-                <h2>
-                    <table style="width:20%">
-                        <tr>
-                            <td><label> DUT: </label> </td>
-                            <td><input type="text" name="dut"> </td>
-                        </tr>
-                        <tr>
-                            <td><label> LoopbackID: </label> </td>
-                            <td><input type="text" name="loopbackid"> </td>
-                        </tr>
-                    <tr>
-                        <td><label> Adminstate: </label> </td>
-                            <td><select name="adminstate"> <br><br>
-                        <option value="UP">UP</option>
-                        <option value="DOWN">DOWN</option>
-                                </select> </td>
-                    </tr>
-
-                   </table>
-                </h2>
-                    <button class="btn success" name=locmd value="LoCreate" >LO Create</button>
-                    <button class="btn danger" name=locmd value="LoDelete" > LO Delete </button>
-                    <button class="btn semi" name=locmd value="LoUpdate" > LO Update</button>
-            </form>
         </div>
 
         <div id="TESTCASES" class="tabcontent">
@@ -270,13 +83,17 @@
             <form action="/testcasesubmit" method="post">
                 <h2>
                     <table style="width:20%">
-                        <tr> <td><input type="checkbox" name="testcase" value="TopoCheck" checked> Topology Check</td> </tr>
+                        <tr> <td><input type="checkbox" name="testcase" value="OverlayTest"> Overlay Test</td> </tr>
                         <tr> <td><input type="checkbox" name="testcase" value="L2Test"> L2 Testcases </td> </tr>
-                        <tr> <td><input type="checkbox" name="testcase" value="L3Test"> L3 Testcases </td> </tr>
-                        <tr> <td><input type="checkbox" name="testcase" value="MgmtTest"> Mgmt Testcases </td> </tr>
-                        <tr> <td><input type="checkbox" name="testcase" value="IPv6Test"> IPV6 Testcases </td> </tr>
                         <tr> <td><input type="checkbox" name="testcase" value="All" onClick="CheckAll(this)"/> ALL </td> </tr>
                    </table>
+                    <table style="width:40%">
+                    <tr>
+                        <td><label> Setup Info: </label> </td>
+                        <td><input type="text" name="setup" size="30" value="appserv93,appserv94,appserv95"> </td>
+                    </tr>
+
+                    </table>
                 </h2>
                     <button class="btn success" name=testcasecmd value="testSubmit" >Submit</button>
             </form>
@@ -300,7 +117,6 @@
     }
 
     function CheckAll(source) {
-        console.log("Java script logs");
         checkboxes = document.getElementsByName('testcase');
         for (var i = 0; i < items.length;i++) {
             if (items[i].type == 'checkbox') 
