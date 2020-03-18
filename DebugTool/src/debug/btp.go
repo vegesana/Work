@@ -1,4 +1,4 @@
-package main
+package debug
 
 import (
 	"bufio"
@@ -8,19 +8,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-type Key struct {
-	lport, session, key string
-}
-
-// valid session
-type VSession struct {
-	lport   string
-	session string
-}
-
-var btpUtilMap map[Key]string
-var AllStringKeyMap map[string]struct{}
 
 func DumpBtpErrors(servername string) {
 
@@ -37,7 +24,7 @@ func DumpBtpErrors(servername string) {
 					reason := "NVMEoE Commands are queued and not dequed by BTP"
 					err := fmt.Sprintf("lport:%s,sess:%s,val:%d: %s\n",
 						k.lport, k.session, value, reason)
-					SendError(err)
+					writeToDb(MyError{servername, err})
 				}
 			}
 			if strings.Contains(k.key, "Number of queued NVMEoE control frames") {
@@ -46,7 +33,7 @@ func DumpBtpErrors(servername string) {
 					reason := "NVMEoE COntrol are queued and not dequed by BTP"
 					err := fmt.Sprintf("lport:%s,sess:%s,val:%d: %s\n",
 						k.lport, k.session, value, reason)
-					SendError(err)
+					writeToDb(MyError{servername, err})
 
 				}
 			}
@@ -56,7 +43,7 @@ func DumpBtpErrors(servername string) {
 					reason := "NVMEoE Data are queued and not dequed by BTP"
 					err := fmt.Sprintf("lport:%s,sess:%s,val:%d: %s\n",
 						k.lport, k.session, value, reason)
-					SendError(err)
+					writeToDb(MyError{servername, err})
 				}
 			}
 			if strings.Contains(k.key, "BTP ping FSM state") {
@@ -68,9 +55,9 @@ func DumpBtpErrors(servername string) {
 							2: Ping sent but waiting for response
 					*/
 					reason := "Session Ping not in Good state"
-					err := fmt.Sprintf("%s:<lport:%s,sess:%s>, val:%d: %s\n",
-						servername, k.lport, k.session, value, reason)
-					SendError(err)
+					err := fmt.Sprintf("<lport:%s,sess:%s>, val:%d: %s\n",
+						k.lport, k.session, value, reason)
+					writeToDb(MyError{servername, err})
 
 				}
 			}
@@ -79,9 +66,9 @@ func DumpBtpErrors(servername string) {
 				value, _ := strconv.Atoi(v)
 				if value != 1 {
 					reason := "Session Rslogin not in Good state"
-					err := fmt.Sprintf("%s:<lport:%s,sess:%s>, val:%d: %s\n",
-						servername, k.lport, k.session, value, reason)
-					SendError(err)
+					err := fmt.Sprintf("<lport:%s,sess:%s>, val:%d: %s\n",
+						k.lport, k.session, value, reason)
+					writeToDb(MyError{servername, err})
 
 				}
 			}
@@ -113,15 +100,18 @@ func processBtpUtil(path string, servername string) error {
 	btpUtilMap = map[Key]string{}
 	AllStringKeyMap = map[string]struct{}{}
 
+	fmt.Println("start prcessBtpUti", path, servername)
 	var lstart, sstart bool
 	var lport, session string
 	f, _ := os.Open(path)
 	scanner := bufio.NewScanner(f)
 	re := regexp.MustCompile(`Lport (\d+)+`)
 	re1 := regexp.MustCompile(`Session (\d+)+`)
+	var line string
+	var lslice []string
 	for scanner.Scan() {
-		line := scanner.Text()
-		lslice := re.FindStringSubmatch(line)
+		line = scanner.Text()
+		lslice = re.FindStringSubmatch(line)
 		if len(lslice) > 1 {
 			lstart = true
 			lport = lslice[1]
@@ -147,10 +137,7 @@ func processBtpUtil(path string, servername string) error {
 			}
 
 		}
-
 	}
-
-	fmt.Println("End of btp rpocessing", path)
 	DumpBtpErrors(servername)
 	return nil
 }

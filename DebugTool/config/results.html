@@ -1,0 +1,154 @@
+<html>
+    <head>
+    <title></title>
+    </head>
+    <style>
+    body {font-family: Arial;}
+    .btn {
+        border: none;
+        color: white;
+        padding: 14px 28px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    .success {background-color: #4CAF50;} /* Green */
+    .success:hover {background-color: #46a049;}
+    .danger {background-color: #f44336;} /* Red */
+    .danger:hover {background: #da190b;}
+    .semi {background-color: #deb887;} /* Red */
+    .semi:hover {background: #deb887;}
+    /* Style the tab */
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+    background-color: #ddd;
+}
+    /* Create an active/current tablink class */
+.tab button.active {
+    background-color: #ccc;
+}
+    /* Style the tab content */
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
+    </style>
+
+    <body>
+        <h2>Tabs</h2>
+        <p>Click on the buttons inside the tabbed menu:</p>
+
+        <div class="tab">
+            <button class="tablinks" onclick="openCity(event, 'SYSTEMINFO')">SYSTEMINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'ERRINFO')">ERRINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'MACINFO')">MACINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'PININFO')">PININFO</button>
+            <button class="tablinks" onclick="openCity(event, 'TESTDRAW')">TESTDRAW</button>
+        </div>
+
+        <div id="SYSTEMINFO" class="tabcontent">
+         <h3>System Information</h3>
+        <form action="/sysSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> System Info: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=syscmd value="SysInfoShow" >Show</button>
+                <button class="btn danger" name=syscmd value="SysInfoClear" > Clear</button>
+        </form>
+        </div>
+
+        <div id="TESTDRAW" class="tabcontent">
+         <h3>TEST DRAW </h3>
+            <div style="width:500px;height:100px;border:1px solid #000;">This is a rectangle!</div>
+        </div>
+
+
+        <div id="PININFO" class="tabcontent">
+         <h3>Pin Information</h3>
+        <form action="/pinSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> Pin Info: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=maccmd value="PinInfoShow" >Show</button>
+                <button class="btn danger" name=macmd value="PinInfoClear" > Clear</button>
+        </form>
+        </div>
+
+        <div id="MACINFO" class="tabcontent">
+         <h3>Mac Information</h3>
+        <form action="/macSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> Mac Info: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=maccmd value="MacInfoShow" >Show</button>
+                <button class="btn danger" name=macmd value="MacInfoClear" > Clear</button>
+        </form>
+        </div>
+
+        <div id="ERRINFO" class="tabcontent">
+         <h3>Error Information</h3>
+        <form action="/errSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> Error Information: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=errcmd value="ErrInfoShow" >Show</button>
+                <button class="btn danger" name=errcmd value="ErrInfoClear" > Clear</button>
+        </form>
+        </div>
+
+<script>
+    function openCity(evt, cityName) {
+
+        console.log("Java script logs");
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(cityName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+</script>
+    </body>
+</html>
+
