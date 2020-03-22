@@ -24,7 +24,8 @@ func Dump(param ...interface{}) {
 }
 
 func Debug(param ...interface{}) {
-	fmt.Println(param)
+	//fmt.Println(param)
+	return
 }
 func DumpErrors() {
 	fmt.Println("ERRORS")

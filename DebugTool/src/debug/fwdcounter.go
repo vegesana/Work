@@ -13,6 +13,7 @@ func processFwdCounters(path string, servername string) error {
 	f, _ := os.Open(path)
 	r := regexp.MustCompile(`[ ]+`)
 	scanner := bufio.NewScanner(f)
+	fmt.Println("Inside processFwdCounters", servername)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "errors") || strings.Contains(line, "drop") {
@@ -21,8 +22,10 @@ func processFwdCounters(path string, servername string) error {
 			if len(val) > 0 {
 				for i, value := range val[1:] {
 					if value != "0000000000000000" {
-						errstr := fmt.Sprintf("Server:%s:If:eth%d Error:%s,Count:%s\n",
-							servername, i, strings.TrimSpace(val[0]), value)
+						errstr := fmt.Sprintf("If:eth%d Error:%s,Count:%s\n",
+							i, strings.TrimSpace(val[0]), value)
+
+						fmt.Println("writetoDB processFwdCounters", servername)
 						writeToDb(MyError{servername, errstr})
 					}
 				}
@@ -30,5 +33,7 @@ func processFwdCounters(path string, servername string) error {
 			}
 		}
 	}
+
+	fmt.Println("End processFwdCounters", servername)
 	return nil
 }
