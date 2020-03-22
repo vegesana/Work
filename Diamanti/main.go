@@ -258,7 +258,7 @@ func isLineSpl(ln string) bool {
 
 }
 func getServerNameFromPath(path string) string {
-	re, _ := regexp.Compile(`appserv\d+`)
+	re, _ := regexp.Compile(`bosserv\d+`)
 	value := re.FindString(path)
 	return value
 }

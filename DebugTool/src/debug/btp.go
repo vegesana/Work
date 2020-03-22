@@ -100,15 +100,16 @@ func processBtpUtil(path string, servername string) error {
 	btpUtilMap = map[Key]string{}
 	AllStringKeyMap = map[string]struct{}{}
 
-	fmt.Println("start prcessBtpUti", path, servername)
+	fmt.Println("inside processBtpUtil", servername, path)
 	var lstart, sstart bool
 	var lport, session string
 	f, _ := os.Open(path)
 	scanner := bufio.NewScanner(f)
-	re := regexp.MustCompile(`Lport (\d+)+`)
-	re1 := regexp.MustCompile(`Session (\d+)+`)
+	re := regexp.MustCompile(`Lport (\d+):`)
+	re1 := regexp.MustCompile(`Session (\d+):`)
 	var line string
 	var lslice []string
+
 	for scanner.Scan() {
 		line = scanner.Text()
 		lslice = re.FindStringSubmatch(line)
@@ -138,6 +139,7 @@ func processBtpUtil(path string, servername string) error {
 
 		}
 	}
+	fmt.Println("End processBtpUtil", servername)
 	DumpBtpErrors(servername)
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -126,48 +127,69 @@ func init() {
 
 	go readWriteGoRoutine()
 
-	go goRoutine("Junk", JunkCh, nil)
-	go goRoutine("Network Info", NetworkInfoCh, NetworkInfoFun)
-	go goRoutine("Mac Info", MacInfoCh, MacInfoFun)
+	// go goRoutine("Junk", JunkCh, nil)
+	// go goRoutine("Network Info", NetworkInfoCh, NetworkInfoFun)
+	// go goRoutine("Mac Info", MacInfoCh, MacInfoFun)
 
 	// Start a Go routine to update the DATABASES and also
 	// to get the data from DB
 }
-func Start(path string) {
+func Start(path string, serverprefix string) {
 	fmt.Println("Debug Server")
-	go loopThroughAllFilesInAllSubDir(path)
+	go loopThroughAllFilesInAllSubDir(path, serverprefix)
 }
 
-func getServerNameFromPath(path string) string {
-	re, _ := regexp.Compile(`appserv\d+`)
+func getServerNameFromPath(path string, servprefix string) string {
+	newstr := servprefix + `\d+`
+	re, _ := regexp.Compile(newstr)
 	value := re.FindString(path)
 	return value
 }
 
-func loopThroughAllFilesInAllSubDir(inputDir string) error {
+func loopThroughAllFilesInAllSubDirTest(inputDir string, servprefix string) error {
+	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
+
+		if strings.Contains(path, "bosserv") {
+			if info.IsDir() {
+				fmt.Println("Dir is ", path)
+			}
+		}
+
+		return nil
+	})
+	return nil
+}
+func loopThroughAllFilesInAllSubDir(inputDir string, servprefix string) error {
 
 	var servername string
 
 	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
 
-		if servername = getServerNameFromPath(path); servername != "" {
+		if info.IsDir() {
+			fmt.Println("Dir is ", path)
+		}
+		if strings.Contains(path, servprefix) {
+			if servername = getServerNameFromPath(path, servprefix); servername != "" {
 
-			/* If boardinfo exits, then process it */
-			if info.Name() == "boardinfo.log" {
-				go processBoardInfo(path, servername)
-			}
-			if info.Name() == "fwdcounters.log" {
-				go processFwdCounters(path, servername)
-			}
-
-			if info.Name() == "btputil.log" {
-				go processBtpUtil(path, servername)
-			}
-			/*
-				if info.Name() == "ncdutil.log" {
-					go processNcdUtil(path, servername)
+				/* If boardinfo exits, then process it */
+				if info.Name() == "boardinfo.log" {
+					fmt.Println("Boardinfo ", path)
+					processBoardInfo(path, servername)
 				}
-			*/
+				if info.Name() == "fwdcounters.log" {
+					fmt.Println("fwdcounter", path)
+					processFwdCounters(path, servername)
+				}
+				if info.Name() == "btputil.log" {
+					fmt.Println("btputil", path)
+					processBtpUtil(path, servername)
+				}
+				/*
+					if info.Name() == "ncdutil.log" {
+						go processNcdUtil(path, servername)
+					}
+				*/
+			}
 		}
 		return nil
 	})
@@ -178,11 +200,16 @@ func writeToDBBackend(wval interface{}) {
 	switch wval.(type) {
 	case SystemInfo:
 		wsval := wval.(SystemInfo)
-		fmt.Println("Write System Info", SystemMap)
-		SystemMap[wsval.ServerName] = SystemInfo{wsval.BoardInfo,
-			wsval.ProductId, wsval.ServerName}
+		fmt.Printf("WriteToDB System Info: %#v\n", wsval)
+		if len(wsval.ServerName) == 0 {
+			fmt.Println("Serever INFO NOT FOUND ", SystemMap)
+		} else {
+			SystemMap[wsval.ServerName] = SystemInfo{wsval.BoardInfo,
+				wsval.ProductId, wsval.ServerName}
+		}
 	case MyError:
 		myerr := wval.(MyError)
+		fmt.Printf("WritetToDB MyError: %#v\n", myerr)
 		MyErrSlice = append(MyErrSlice, myerr)
 	case MacInfo:
 		/* we are buidling 2 data based here */

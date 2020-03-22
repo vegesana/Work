@@ -99,9 +99,10 @@ func (r *RestObj) HandleDebugConfig(resp http.ResponseWriter, req *http.Request)
 	req.ParseForm()
 
 	path := req.Form["path"]
+	servname := req.Form["servername"][0]
 
 	for _, val := range path {
-		debug.Start(val)
+		debug.Start(val, servname)
 		// resp.Write([]byte("Path is:" + val))
 		filepath := "config/results.html"
 		http.ServeFile(resp, req, filepath)
