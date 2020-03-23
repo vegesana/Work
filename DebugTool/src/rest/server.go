@@ -11,9 +11,37 @@ import (
 type page struct {
 	Title   string
 	SysInfo []debug.SystemInfo
+	MacInfo []MacInfoRest
+	PinInfo []PinInfoRest
+	PclInfo []PclInfoRest
 	ErrInfo []debug.MyError
 }
 
+type RuleListRest struct {
+	Rule string
+}
+type PclInfoRest struct {
+	Server   string
+	RuleList []RuleListRest
+}
+
+type PortPairRest struct {
+	SPort string
+	DPort string
+}
+type PinInfoRest struct {
+	Server    string
+	PortSlice []PortPairRest
+}
+type ServerPortInfo struct {
+	Server string
+	Port   string
+}
+type MacInfoRest struct {
+	Mac             string
+	Vlan            string
+	ServerPortSlice []ServerPortInfo
+}
 type RestObj struct {
 }
 
@@ -33,6 +61,8 @@ func (r *RestObj) Start() {
 	http.HandleFunc("/sysSubmit", r.HandleSystemInfo)
 	http.HandleFunc("/macSubmit", r.HandleMacInfo)
 	http.HandleFunc("/errSubmit", r.HandleErrInfo)
+	http.HandleFunc("/pclSubmit", r.HandlePclInfo)
+	http.HandleFunc("/pinSubmit", r.HandlePinInfo)
 	go http.ListenAndServe("Localhost:8080", nil)
 }
 
@@ -46,8 +76,88 @@ func (r *RestObj) HandleMainConfig(resp http.ResponseWriter, req *http.Request) 
 	filepath := "config/main.html"
 	http.ServeFile(resp, req, filepath)
 }
+
+func (r *RestObj) HandlePinInfo(w http.ResponseWriter, req *http.Request) {
+	val := debug.GetPinInfo()
+	pininfo := val.(map[string]map[string]string)
+	fmt.Printf("pin info rest%#v\n", pininfo)
+
+	w.Header().Add("Content Type", "text/html")
+	templates := template.New("template")
+	templates.New("Body").Parse(pinDoc)
+	templates.New("List").Parse(pinDocList)
+	templates.New("List1").Parse(pinDocList1)
+
+	pinInfoRest := []PinInfoRest{}
+	for server, portMap := range pininfo {
+		pininfo := PinInfoRest{}
+		pininfo.Server = server
+		for sport, dport := range portMap {
+			pininfoport := PortPairRest{}
+			pininfoport.SPort = sport
+			pininfoport.DPort = dport
+			pininfo.PortSlice = append(pininfo.PortSlice, pininfoport)
+		}
+		pinInfoRest = append(pinInfoRest, pininfo)
+	}
+
+	page := page{Title: "Pin Information", PinInfo: pinInfoRest}
+	templates.Lookup("Body").Execute(w, page)
+
+}
+func (r *RestObj) HandlePclInfo(w http.ResponseWriter, req *http.Request) {
+
+	val := debug.GetPclInfo()
+	pclInfo := val.(map[string][]string)
+	fmt.Printf("handle pcl info%#v\n", pclInfo)
+
+	w.Header().Add("Content Type", "text/html")
+	templates := template.New("template")
+	templates.New("Body").Parse(pclDoc)
+	templates.New("List").Parse(pclDocList)
+	templates.New("List1").Parse(pclDocList1)
+
+	pclInfoRest := []PclInfoRest{}
+	for server, ruleList := range pclInfo {
+		pclrest := PclInfoRest{}
+		pclrest.Server = server
+		for _, rule := range ruleList {
+			myrule := RuleListRest{rule}
+			pclrest.RuleList = append(pclrest.RuleList, myrule)
+		}
+		pclInfoRest = append(pclInfoRest, pclrest)
+	}
+
+	page := page{Title: "PCL VLAN Information", PclInfo: pclInfoRest}
+	templates.Lookup("Body").Execute(w, page)
+
+}
 func (r *RestObj) HandleMacInfo(w http.ResponseWriter, req *http.Request) {
-	w.Write([]byte("Handle Mac Info"))
+	val := debug.GetMacInfo()
+	macinfo := val.(map[debug.MacVlan]map[debug.GPort]struct{})
+
+	w.Header().Add("Content Type", "text/html")
+	templates := template.New("template")
+	templates.New("Body").Parse(macDoc)
+	templates.New("List").Parse(macDocList)
+	templates.New("List1").Parse(macDocList1)
+
+	macInfoRest := []MacInfoRest{}
+	for macvlan, serverportmap := range macinfo {
+		smacinfo := MacInfoRest{}
+		smacinfo.Mac = macvlan.Mac
+		smacinfo.Vlan = macvlan.Vlan
+
+		for portinfo, _ := range serverportmap {
+			serverport := ServerPortInfo{Server: portinfo.Server,
+				Port: portinfo.Portname}
+			smacinfo.ServerPortSlice = append(smacinfo.ServerPortSlice, serverport)
+		}
+		macInfoRest = append(macInfoRest, smacinfo)
+
+	}
+	page := page{Title: "MAC Information", MacInfo: macInfoRest}
+	templates.Lookup("Body").Execute(w, page)
 
 }
 func (r *RestObj) HandleErrInfo(w http.ResponseWriter, req *http.Request) {
@@ -59,8 +169,6 @@ func (r *RestObj) HandleErrInfo(w http.ResponseWriter, req *http.Request) {
 	templates := template.New("template")
 	templates.New("Body").Parse(errDoc)
 	templates.New("List").Parse(errDocList)
-
-	fmt.Printf("slice rest %#v\n", myslice)
 
 	page := page{Title: "Error Information", ErrInfo: myslice}
 	templates.Lookup("Body").Execute(w, page)
@@ -130,89 +238,3 @@ func (r *RestObj) HandleTestcases(resp http.ResponseWriter, req *http.Request) {
 		}
 	}
 }
-
-const macDocList = `
-<ul >
-    {{range .}}
-    <tr>
-        <td>{{.ServerName}}</td>
-        <td>{{.BoardInfo}}</td>
-        <td>{{.ProductId}}</td>
-    </tr>
-    {{end}}
-</ul>
-`
-
-const macDoc = `
-<!DOCTYPE html>
-<html>
-    <head><title>{{.Title}}</title></head>
-    <body>
-        <h1>{{.Title}}</h1>
-        <table style="width:20%" border="1">
-        <tr>
-            <th> ServerName </th>
-            <th> BoardInfo</th>
-            <th> ProductId</th>
-        </tr>
-        {{template "List" .SysInfo}}
-        </table>
-    </body>
-</html>
-`
-const errDocList = `
-<ul >
-    {{range .}}
-    <tr>
-        <td>{{.ServerName}}</td>
-        <td>{{.MyErr}}</td>
-    </tr>
-    {{end}}
-</ul>
-`
-
-const errDoc = `
-<!DOCTYPE html>
-<html>
-    <head><title>{{.Title}}</title></head>
-    <body>
-        <h1>{{.Title}}</h1>
-        <table style="width:40%" border="1">
-        <tr>
-            <th> ServerName </th>
-            <th> Error </th>
-        </tr>
-        {{template "List" .ErrInfo}}
-        </table>
-    </body>
-</html>
-`
-const sysDocList = `
-<ul >
-    {{range .}}
-    <tr>
-        <td>{{.ServerName}}</td>
-        <td>{{.BoardInfo}}</td>
-        <td>{{.ProductId}}</td>
-    </tr>
-    {{end}}
-</ul>
-`
-
-const sysDoc = `
-<!DOCTYPE html>
-<html>
-    <head><title>{{.Title}}</title></head>
-    <body>
-        <h1>{{.Title}}</h1>
-        <table style="width:20%" border="1">
-        <tr>
-            <th> ServerName </th>
-            <th> BoardInfo</th>
-            <th> ProductId</th>
-        </tr>
-        {{template "List" .SysInfo}}
-        </table>
-    </body>
-</html>
-`

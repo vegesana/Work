@@ -2,6 +2,7 @@ package debug
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -58,9 +59,11 @@ func GetNewRegExp(filename string) string {
 	f, _ := os.Open(filename)
 	re := regexp.MustCompile(`\w+\s*:\s*\d+`)
 	scanner := bufio.NewScanner(f)
+	fmt.Println("filename", filename)
 	newstr := ""
 	for scanner.Scan() {
 		ln := strings.TrimSpace(scanner.Text())
+		fmt.Println("Scannerl Text", ln)
 		tt := re.ReplaceAllString(ln, `(\w+):\s*(\d+)`)
 		newstr = newstr + `\s*` + tt
 	}
@@ -89,4 +92,23 @@ func convertMapStringToMapInt(mymap map[string]string) map[string]int {
 	}
 
 	return newmap
+}
+
+func getKeyValue(data, express string, count int) (map[string]string, error) {
+
+	var err = errors.New("Error")
+
+	r, _ := regexp.Compile(express)
+	mymap := make(map[string]string)
+	if result := r.FindAllStringSubmatch(data, -1); len(result) != 0 {
+		err = nil
+		for _, element := range result {
+			for i := 0; i < count; i++ {
+				j := 2*i + 1
+				mymap[element[j]] = element[j+1]
+			}
+		}
+	}
+	return mymap, err
+
 }
