@@ -25,6 +25,16 @@ func processNcdUtil(path string, servername string) error {
 				mych = MacInfoCh
 			}
 
+			if strings.Index(ln, "Interface Info") == 0 {
+				Debug("Interface Info channel ")
+				mych = IntfInfoCh
+			}
+
+			if strings.Index(ln, "PCL Info") == 0 {
+				Debug("PCL Info channel ")
+				mych = PclInfoCh
+			}
+
 			lninfo := lineData{servername, origTxt, servername}
 			mych <- lninfo
 
@@ -66,8 +76,8 @@ func goRoutine(str string, ch chan interface{}, fun func(lineData)) {
 }
 
 func (line lineData) getText() string {
-	return line.line
+	return line.Line
 }
 func (line lineData) getFileName() string {
-	return line.filename
+	return line.Server
 }
