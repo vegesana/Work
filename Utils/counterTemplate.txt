@@ -1,0 +1,32 @@
+ Port: 0
+      Good Octets Received:      888557
+      Bad Octets Received:       0
+      MAC Transmit Error:        0
+      BRDC Packets Rcvd:         0
+      MC Packets Received:       0
+      Size 64:               208
+      Size 65 to 127:        8482
+      Size 128 to 255:       2213
+      Size 256 to 511:       264
+      Size 512 to 1023:      178
+      Size 1024 to Max:      8
+      Good Octets Sent:      383912
+      Excessive Collision:       0
+      MC Packets Sent:       359
+      BRDC Packets Sent:         0
+      FC Sent:               0
+      Good FC Received:      0
+      Drop Events:           0
+      Undersize Packets:         0
+      Fragments Packets:         0
+      Oversize Packets:      0
+      Jabber Packets:        0
+      MAC RX Err Pkt Rcvd:       0
+      Bad CRC:               0
+      Collisions:            0
+      Late Collision:        0
+      Bad FC Received:       0
+      Good UC Pkt Rcvd:      6703
+      Good UC Packets Sent:      4291
+      Multiple Pkt Sent:         0
+      Deferred Pkt Sent:         0
