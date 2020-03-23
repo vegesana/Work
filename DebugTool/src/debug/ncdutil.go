@@ -35,6 +35,26 @@ func processNcdUtil(path string, servername string) error {
 				mych = PclInfoCh
 			}
 
+			if strings.Index(ln, "Counters Info:") == 0 {
+				Debug("Picked Counter Channel")
+				mych = CounterCh
+			}
+
+			if strings.Index(ln, "QOS Info:") == 0 {
+				Debug("Picked Qos Channel")
+				mych = CounterCh
+			}
+
+			if strings.Index(ln, "Statistics Info") == 0 {
+				Debug("Statistic Info channel ")
+				mych = StatsInfoCh
+			}
+
+			if strings.Index(ln, "Cfg Info") == 0 {
+				Debug("Cfg Info channel ")
+				mych = CfgInfoCh
+			}
+
 			lninfo := lineData{servername, origTxt, servername}
 			mych <- lninfo
 

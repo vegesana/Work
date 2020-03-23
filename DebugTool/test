@@ -1,0 +1,3 @@
+    nm_hello: 1, nm_query_portcfg: 1, nm_heartbeat: 500,nm_query_switchcfg: 1, nm_query_boardinfo: 1, nm_config_switchif: 12, nm_disconnect: 0
+    nm_vtep_create: 0, nm_vtep_delete: 0, nm_create_local_if: 9, nm_delete_local_if: 0, nm_query_local_if: 2, nm_create_remote_if: 0
+    storage_mode_cnt:1, storage_cfg_cnt:1,unknown_cmd_cnt:0

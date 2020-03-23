@@ -90,6 +90,9 @@ var NetworkInfoCh chan interface{}
 var MacInfoCh chan interface{}
 var IntfInfoCh chan interface{}
 var PclInfoCh chan interface{}
+var CounterCh chan interface{}
+var StatsInfoCh chan interface{}
+var CfgInfoCh chan interface{}
 
 type MyError struct {
 	ServerName string
@@ -104,6 +107,8 @@ var dbReadCh chan ReadData
 
 var SystemMap map[string]SystemInfo
 var TempIntfInfo map[string]string
+var TempCntrInfo map[string]string
+var TempStatsInfo map[string]string
 
 const (
 	SIZE = 10
@@ -116,6 +121,8 @@ func init() {
 	fmt.Println("Debug Server Init called")
 	SystemMap = map[string]SystemInfo{}
 	TempIntfInfo = map[string]string{}
+	TempCntrInfo = map[string]string{}
+	TempStatsInfo = map[string]string{}
 	tempErrorExistsMap = map[MyError]struct{}{}
 	dbWriteCh = make(chan interface{})
 	//dbReadCh = make(chan ReadData, SIZE)
@@ -136,6 +143,9 @@ func init() {
 	MacInfoCh = make(chan interface{}, Gdata.BufSize)
 	IntfInfoCh = make(chan interface{}, Gdata.BufSize)
 	PclInfoCh = make(chan interface{}, Gdata.BufSize)
+	CounterCh = make(chan interface{}, Gdata.BufSize)
+	StatsInfoCh = make(chan interface{}, Gdata.BufSize)
+	CfgInfoCh = make(chan interface{}, Gdata.BufSize)
 
 	go readWriteGoRoutine()
 
@@ -144,6 +154,9 @@ func init() {
 	go goRoutine("Mac Info", MacInfoCh, MacInfoFun)
 	go goRoutine("Interface Info", IntfInfoCh, IntfInfoFun)
 	go goRoutine("Pcl Info", PclInfoCh, PclInfoFun)
+	go goRoutine("Counters", CounterCh, CounterFun)
+	go goRoutine("Stats Info", StatsInfoCh, StatsInfoFun)
+	go goRoutine("Cfg Info", CfgInfoCh, CfgInfoFun)
 
 	// Start a Go routine to update the DATABASES and also
 	// to get the data from DB
@@ -251,9 +264,7 @@ func writeToDBBackend(wval interface{}) {
 		}
 		Debug("BUILD PortDB", Gdata.PortDB)
 	case PinInfo:
-		fmt.Println("Bulding Pin Info")
 		pindata := wval.(PinInfo)
-		Debug("Recevied Pindata", pindata)
 		if value, ok := Gdata.PinDB[pindata.Server]; !ok {
 			Gdata.PinDB[pindata.Server] = make(map[string]string)
 			Gdata.PinDB[pindata.Server][pindata.Sport] = pindata.Dport
