@@ -63,6 +63,8 @@
             <button class="tablinks" onclick="openCity(event, 'MACINFO')">MACINFO</button>
             <button class="tablinks" onclick="openCity(event, 'PININFO')">PININFO</button>
             <button class="tablinks" onclick="openCity(event, 'PCLVLANINFO')">PCLVLANINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'NODEINFO')">NODEINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'NETWORKINFO')">NETWORKINFO</button>
             <button class="tablinks" onclick="openCity(event, 'TESTDRAW')">TESTDRAW</button>
         </div>
 
@@ -88,7 +90,7 @@
 
 
         <div id="PININFO" class="tabcontent">
-         <h3>Pin Information</h3>
+         <h3> Pin Information</h3>
         <form action="/pinSubmit" method="post">
             <h2>
                 <table style="width:20%">
@@ -99,6 +101,37 @@
             </h2>
                 <button class="btn success" name=pincmd value="PinInfoShow" >Show</button>
                 <button class="btn danger" name=pinmd value="PinInfoClear" > Clear</button>
+        </form>
+        </div>
+        
+        <div id="NODEINFO" class="tabcontent">
+         <h3> Node Information </h3>
+        <form action="/nodeSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> Node Information: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=nodecmd value="NodeInfoShow" >Show</button>
+                <button class="btn danger" name=nodecmd value="NodeInfoClear" > Clear</button>
+        </form>
+        </div>
+
+
+        <div id="NETWORKINFO" class="tabcontent">
+         <h3> Network Information </h3>
+        <form action="/networkSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> Network Information: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=networkcmd value="NetworkInfoShow" >Show</button>
+                <button class="btn danger" name=networkmd value="NetworkInfoClear" > Clear</button>
         </form>
         </div>
 

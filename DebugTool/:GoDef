@@ -2,46 +2,23 @@ package rest
 
 import (
 	"DebugTool/src/debug"
+	"DebugTool/src/privated"
 	"fmt"
 	"html/template"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
 type page struct {
-	Title        string
-	SysInfo      []debug.SystemInfo
-	MacInfo      []MacInfoRest
-	PinInfo      []PinInfoRest
-	PclInfo      []PclInfoRest
-	ErrInfo      []debug.MyError
-	NetworkInfor []NetworkRest
-	NodeInfor    []NodeRest
+	Title   string
+	SysInfo []debug.SystemInfo
+	MacInfo []MacInfoRest
+	PinInfo []PinInfoRest
+	PclInfo []PclInfoRest
+	ErrInfo []debug.MyError
+	Items   []privated.Network
 }
 
-type NetworkRest struct {
-	Name       string // Name
-	Zone       string // Annotations[failure-domain.beta.kubernetes.io/zone]
-	Type       string // Spec.Type
-	SSubnet    string // Status.Subnet
-	SVlan      string // Status.Vlan [int to string]
-	SUsedAddr  string // Status.UsedAddrs
-	SNumAddr   string // Status.NumAddrs
-	GatewayMac string // StorageNetworkSpec.GatewayMac: only when stroage
-}
-
-type NodeRest struct {
-	HostName   string // Host.Hostname
-	NodeHealth string // Status.NodeHealth
-	K8sHealth  string // Status.K8sHealth
-	Zone       string // Spec.Zone
-	SIP1       string // StorageIPs.StorageIpPort1
-	SIP3       string // StorageIPs.StorageIpPort2
-	GMAC       string // StorageIPs.GatewayMac
-	Svlan      string // StorageIPs.SVLAN
-	Mode       string // StorageIPs.Mode
-}
 type RuleListRest struct {
 	Rule string
 }
@@ -89,7 +66,6 @@ func (r *RestObj) Start() {
 	http.HandleFunc("/pclSubmit", r.HandlePclInfo)
 	http.HandleFunc("/pinSubmit", r.HandlePinInfo)
 	http.HandleFunc("/networkSubmit", r.HandleNetworkInfo)
-	http.HandleFunc("/nodeSubmit", r.HandleNodeInfo)
 	go http.ListenAndServe("Localhost:8080", nil)
 }
 
@@ -103,66 +79,9 @@ func (r *RestObj) HandleMainConfig(resp http.ResponseWriter, req *http.Request) 
 	filepath := "config/main.html"
 	http.ServeFile(resp, req, filepath)
 }
-func (r *RestObj) HandleNodeInfo(w http.ResponseWriter, req *http.Request) {
-	val := debug.GetNodeInfo()
-	nodeinfo := val.(debug.NodeList)
 
-	w.Header().Add("Content Type", "text/html")
-	templates := template.New("template")
-	templates.New("Body").Parse(nodeDoc)
-	templates.New("List").Parse(nodeDocList)
-
-	nodeslice := []NodeRest{}
-
-	for _, nl := range nodeinfo.Items {
-		nodeelem := NodeRest{} // Fill the data
-
-		nodeelem.HostName = nl.Host.Hostname
-		nodeelem.NodeHealth = string(nl.Status.NodeHealth)
-		nodeelem.K8sHealth = string(nl.Status.K8sHealth)
-		nodeelem.Zone = nl.Spec.Zone
-		nodeelem.SIP1 = nl.StorageIPs.StorageIpPort1
-		nodeelem.SIP3 = nl.StorageIPs.StorageIpPort3
-		nodeelem.GMAC = nl.StorageIPs.GatewayMac
-		nodeelem.Svlan = strconv.Itoa(int(nl.StorageIPs.SVLAN))
-		nodeelem.Mode = string(nl.StorageIPs.Mode)
-		nodeslice = append(nodeslice, nodeelem)
-	}
-
-	fmt.Printf("NodeInfo %#v\n", nodeslice)
-	page := page{Title: "Node Information", NodeInfor: nodeslice}
-	templates.Lookup("Body").Execute(w, page)
-	return
-}
 func (r *RestObj) HandleNetworkInfo(w http.ResponseWriter, req *http.Request) {
-	val := debug.GetNetworkInfo()
-
-	ninfo := val.(debug.NetworkList)
-	w.Header().Add("Content Type", "text/html")
-	templates := template.New("template")
-	templates.New("Body").Parse(networkDoc)
-	templates.New("List").Parse(networkDocList)
-
-	networkslice := []NetworkRest{}
-
-	for _, nl := range ninfo.Items {
-		networkelem := NetworkRest{} // Fill the data
-		networkelem.Name = nl.Name
-		networkelem.Zone = nl.Annotations["failure-domain.beta.kubernetes.io/zone"]
-		networkelem.Type = nl.Spec.Type
-		networkelem.SSubnet = nl.Status.Subnet
-		networkelem.SVlan = strconv.Itoa(int(nl.Status.VLAN))
-		networkelem.SUsedAddr = strconv.Itoa(nl.Status.UsedAddrs)
-		networkelem.SNumAddr = strconv.Itoa(nl.Status.NumAddrs)
-		networkelem.GatewayMac = nl.StorageNetworkSpec.GatewayMac
-
-		networkslice = append(networkslice, networkelem)
-	}
-
-	fmt.Printf("NetworkInfo %#v\n", networkslice)
-	page := page{Title: "Network Information", NetworkInfor: networkslice}
-	templates.Lookup("Body").Execute(w, page)
-
+	privated.GetNetworkInfo()
 	return
 }
 
@@ -307,6 +226,7 @@ func (r *RestObj) HandleDebugConfig(resp http.ResponseWriter, req *http.Request)
 	}
 }
 func (r *RestObj) HandleTestcases(resp http.ResponseWriter, req *http.Request) {
+	// req.Form[<nameinhtml>][]string : This is map[string][]string
 	req.ParseForm()
 
 	setupinfo := req.Form["setup"][0]

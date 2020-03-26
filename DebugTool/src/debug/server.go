@@ -71,9 +71,11 @@ type FInfo struct {
 	size    int64
 }
 type GlobalData struct {
-	FDB    map[MacVlan]map[GPort]struct{}
-	PortDB map[GPort]map[MacVlan]struct{}
-	VlanDB map[GVlan]map[GPort]struct{}
+	FDB       map[MacVlan]map[GPort]struct{}
+	PortDB    map[GPort]map[MacVlan]struct{}
+	VlanDB    map[GVlan]map[GPort]struct{}
+	NodeDB    NodeList
+	NetworkDB NetworkList
 	// appser33: map {1-3 4,5}
 	PinDB       map[string]map[string]string
 	PclDb       map[string][]string
@@ -176,6 +178,7 @@ func getServerNameFromPath(path string, servprefix string) string {
 func loopThroughAllFilesInAllSubDir(inputDir string, servprefix string) error {
 
 	var servername string
+	var oneTimeNetworkCfg bool
 
 	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
 
@@ -200,6 +203,16 @@ func loopThroughAllFilesInAllSubDir(inputDir string, servprefix string) error {
 					go processNcdUtil(path, servername)
 				}
 
+				if info.Name() == "node.log" {
+					go ProcessNodeInfo(path, servername)
+				}
+				if info.Name() == "network.log" {
+					if !oneTimeNetworkCfg {
+						go ProcessNetworkInfo(path, servername)
+						oneTimeNetworkCfg = true
+					}
+				}
+
 			}
 		}
 		return nil
@@ -217,6 +230,12 @@ func checkErrorExists(myerr MyError) bool {
 }
 func writeToDBBackend(wval interface{}) {
 	switch wval.(type) {
+	case NodeList:
+		nval := wval.(NodeList)
+		Gdata.NodeDB = nval
+	case NetworkList:
+		nval := wval.(NetworkList)
+		Gdata.NetworkDB = nval
 	case SystemInfo:
 		wsval := wval.(SystemInfo)
 		fmt.Printf("WriteToDB System Info: %#v\n", wsval)
@@ -323,6 +342,10 @@ func workOnReadFromDBChan(rval ReadData) {
 		outIntf = Gdata.PinDB
 	case Pcldata:
 		outIntf = Gdata.PclDb
+	case NetworkList:
+		outIntf = Gdata.NetworkDB
+	case NodeList:
+		outIntf = Gdata.NodeDB
 	default:
 		fmt.Println("Read for unknown type of data")
 	}
