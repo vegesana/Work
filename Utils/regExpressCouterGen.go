@@ -69,7 +69,58 @@ func main() {
 	}
 	fmt.Printf("Slice is %#v\n", mymap)
 
+	fmt.Println("######################################")
+	fmt.Println("######################################")
+	fmt.Println("######################################")
+	filename = "CtrlTemplate.txt"
+	expression = GetMultiLineCounterStyleRegExp(filename)
+	fmt.Println("Ctrl Expression ", expression)
+	fmt.Println("count ", count)
+
+	f, _ = os.Open(filename)
+	data, _ = ioutil.ReadAll(f)
+	sdata = strings.TrimSpace((string(data)))
+
+	// Return map[int]map[string]string
+	if mymapmap, err := getNewKeyValue(sdata, expression); err == nil {
+		for key, mymap := range mymapmap {
+			for k, v := range mymap {
+				fmt.Printf("Index:%d,key:%s,value:%s\n", key, k, v)
+			}
+		}
+	}
+
 }
+
+/*
+* No Need of count here
+* returns - map[int/id]map[string]string always
+ */
+
+func getNewKeyValue(data, express string) (map[int]map[string]string, error) {
+
+	var err = errors.New("Error")
+
+	r, _ := regexp.Compile(express)
+	mymap := make(map[int]map[string]string)
+
+	// Result is slice of slices
+	if resultSliceSlice := r.FindAllStringSubmatch(data, -1); len(resultSliceSlice) != 0 {
+		for index, slice := range resultSliceSlice {
+			mymap[index] = make(map[string]string)
+			mylen := len(slice)
+			for j := 0; j < (mylen-1)/2; j++ {
+				k := 2*j + 1
+				//fmt.Printf("Index:%d,key:%svalue:%s\n", index, slice[k], slice[k+1])
+				mymap[index][slice[k]] = slice[k+1]
+				err = nil
+			}
+		}
+	}
+	return mymap, err
+
+}
+
 func getKeyValue(data, express string, count int) (map[string]string, error) {
 
 	var err = errors.New("Error")
@@ -89,6 +140,7 @@ func getKeyValue(data, express string, count int) (map[string]string, error) {
 
 }
 
+// get Key values as Counter names
 // get Key values as Counter names
 func GetVeryNewRegExp(filename string) (string, int) {
 	f, _ := os.Open(filename)
@@ -145,4 +197,23 @@ func convertMapStringToMapInt(mymap map[string]string) map[string]int {
 	}
 
 	return newmap
+}
+
+/* Use this when you have : (like Counters) in multiple lines*/
+func GetMultiLineCounterStyleRegExp(filename string) string {
+	f, _ := os.Open(filename)
+	scanner := bufio.NewScanner(f)
+	fmt.Println("filename", filename)
+	newstr := ""
+	re := regexp.MustCompile(`\s*([\w\s]+)\s*:\s*.*`)
+	for scanner.Scan() {
+		ln := strings.TrimSpace(scanner.Text())
+		matches := re.FindStringSubmatch(ln)
+		fmt.Println("len Matches :", len(matches))
+		if len(matches) > 1 {
+			newstr = newstr + `\s*(` + matches[1] + `)\s*:\s*(.*)\s*`
+		}
+	}
+
+	return strings.TrimSpace(newstr)
 }

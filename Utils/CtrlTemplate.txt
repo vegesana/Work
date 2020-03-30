@@ -1,0 +1,14 @@
+    id:                 0
+    type:               0
+    state:              0
+    queue:              0
+    allocated:          2
+    paired_ctrl_id:     0
+    local_mac:          00-00-00-00-00-00
+    remote_mac:         00-00-00-00-00-00
+    io_throttle_count:  0
+    active_io_flag:     0
+    num_xids:           0
+    nvmeoe_max_data_length:   0
+    ctrl shared cookie:       0x0
+    ping in progress:         0
