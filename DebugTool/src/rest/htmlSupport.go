@@ -1,5 +1,41 @@
 package rest
 
+const ctrlDocList = `
+<ul >
+    {{range .}}
+    <tr>
+        <td>{{.Servername}}</td>
+        <td>{{.Id}}</td>
+        <td>{{.Type}}</td>
+        <td>{{.LocalMac}}</td>
+        <td>{{.RemoteMac}}</td>
+        <td>{{.PairedCtrlId}}</td>
+        <td>{{.Cookie}}</td>
+    </tr>
+    {{end}}
+</ul>
+`
+const ctrlDoc = `
+<!DOCTYPE html>
+<html>
+    <head><title>{{.Title}}</title></head>
+    <body>
+        <h1>{{.Title}}</h1>
+		<table style="width:50%" border="3">
+        <tr>
+            	<th> Server </th>
+            	<th> Ctrl ID </th>
+            	<th> Type </th>
+            	<th> Local Mac </th>
+            	<th> Remote Mac </th>
+            	<th> Remote Ctrl Id </th>
+            	<th> Cookie </th>
+        </tr>
+	        {{template "List" .CtrlInfor}}
+        </table>
+    </body>
+</html>
+`
 const nodeDocList = `
 <ul >
     {{range .}}
@@ -41,8 +77,7 @@ const nodeDoc = `
 </html>
 `
 
-const networkDocList = `
-<ul >
+const networkDocList = ` <ul >
     {{range .}}
     <tr>
         <td>{{.Name}}</td>

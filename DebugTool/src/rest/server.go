@@ -10,16 +10,27 @@ import (
 )
 
 type page struct {
-	Title        string
-	SysInfo      []debug.SystemInfo
-	MacInfo      []MacInfoRest
-	PinInfo      []PinInfoRest
-	PclInfo      []PclInfoRest
-	ErrInfo      []debug.MyError
+	Title   string
+	SysInfo []debug.SystemInfo
+	MacInfo []MacInfoRest
+	PinInfo []PinInfoRest
+	PclInfo []PclInfoRest
+	ErrInfo []debug.MyError
+	// This can be Generic - Copy and paste
 	NetworkInfor []NetworkRest
 	NodeInfor    []NodeRest
+	// Map[string][]map[string]string i.e servername: values id:key,value
+	CtrlInfor []CtrlInfoRest
 }
-
+type CtrlInfoRest struct {
+	Servername   string
+	Id           string
+	Type         string
+	LocalMac     string
+	RemoteMac    string
+	PairedCtrlId string
+	Cookie       string
+}
 type NetworkRest struct {
 	Name       string // Name
 	Zone       string // Annotations[failure-domain.beta.kubernetes.io/zone]
@@ -90,6 +101,8 @@ func (r *RestObj) Start() {
 	http.HandleFunc("/pinSubmit", r.HandlePinInfo)
 	http.HandleFunc("/networkSubmit", r.HandleNetworkInfo)
 	http.HandleFunc("/nodeSubmit", r.HandleNodeInfo)
+	http.HandleFunc("/sputilSubmit", r.HandleSputilInfo)
+	http.HandleFunc("/ctrlSubmit", r.HandleCtrlInfo)
 	go http.ListenAndServe("Localhost:8080", nil)
 }
 
@@ -134,6 +147,48 @@ func (r *RestObj) HandleNodeInfo(w http.ResponseWriter, req *http.Request) {
 	templates.Lookup("Body").Execute(w, page)
 	return
 }
+
+func (r *RestObj) HandleSputilInfo(w http.ResponseWriter, req *http.Request) {
+	val := debug.GetSputilInfo()
+	fmt.Printf("HandleSputilInfo", val)
+}
+
+// For any []{servername, ,map[int]mapp[string]string)
+func (r *RestObj) HandleCtrlInfo(w http.ResponseWriter, req *http.Request) {
+	info := debug.GetCtrlInfo()
+
+	infoSlice := info.([]debug.NameMap)
+
+	w.Header().Add("Content Type", "text/html")
+	templates := template.New("template")
+	templates.New("Body").Parse(ctrlDoc)
+	templates.New("List").Parse(ctrlDocList)
+
+	ctrlslice := []CtrlInfoRest{}
+
+	// Flatenning here : New
+	for _, cinfo := range infoSlice {
+
+		for _, valuemap := range cinfo.Mymap {
+			/* Right elwement from backend dump info*/
+			ctrlelem := CtrlInfoRest{} // Fill the data
+			ctrlelem.Servername = cinfo.Servername
+			ctrlelem.Id = valuemap["id"]
+			ctrlelem.Type = valuemap["type"]
+			ctrlelem.LocalMac = valuemap["local_mac"]
+			ctrlelem.RemoteMac = valuemap["remote_mac"]
+			ctrlelem.PairedCtrlId = valuemap["paired_ctrl_id"]
+			ctrlelem.Cookie = valuemap["ctrl shared cookie"]
+			ctrlslice = append(ctrlslice, ctrlelem)
+		}
+
+	}
+	fmt.Printf("CtrlInfo %#v\n", ctrlslice)
+	page := page{Title: "Control Information", CtrlInfor: ctrlslice}
+	templates.Lookup("Body").Execute(w, page)
+
+}
+
 func (r *RestObj) HandleNetworkInfo(w http.ResponseWriter, req *http.Request) {
 	val := debug.GetNetworkInfo()
 
@@ -166,6 +221,7 @@ func (r *RestObj) HandleNetworkInfo(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
+// Map[sgring]map[string]string
 func (r *RestObj) HandlePinInfo(w http.ResponseWriter, req *http.Request) {
 	val := debug.GetPinInfo()
 	pininfo := val.(map[string]map[string]string)

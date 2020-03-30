@@ -71,11 +71,13 @@ type FInfo struct {
 	size    int64
 }
 type GlobalData struct {
-	FDB       map[MacVlan]map[GPort]struct{}
-	PortDB    map[GPort]map[MacVlan]struct{}
-	VlanDB    map[GVlan]map[GPort]struct{}
-	NodeDB    NodeList
-	NetworkDB NetworkList
+	FDB         map[MacVlan]map[GPort]struct{}
+	PortDB      map[GPort]map[MacVlan]struct{}
+	VlanDB      map[GVlan]map[GPort]struct{}
+	NodeDB      NodeList
+	CtrlSlice   []NameMap
+	SputilSlice []NameMap
+	NetworkDB   NetworkList
 	// appser33: map {1-3 4,5}
 	PinDB       map[string]map[string]string
 	PclDb       map[string][]string
@@ -119,6 +121,11 @@ const (
 var MyErrSlice []MyError
 var tempErrorExistsMap map[MyError]struct{}
 
+type NameMap struct {
+	Servername string
+	Mymap      map[int]map[string]string
+}
+
 func init() {
 	fmt.Println("Debug Server Init called")
 	SystemMap = map[string]SystemInfo{}
@@ -137,6 +144,8 @@ func init() {
 	Gdata.FDB = map[MacVlan]map[GPort]struct{}{}
 	Gdata.PortDB = map[GPort]map[MacVlan]struct{}{}
 	Gdata.VlanDB = map[GVlan]map[GPort]struct{}{}
+	Gdata.CtrlSlice = make([]NameMap, 0)
+	Gdata.SputilSlice = make([]NameMap, 0)
 	Gdata.PinDB = map[string]map[string]string{}
 	Gdata.PclDb = map[string][]string{}
 
@@ -203,6 +212,14 @@ func loopThroughAllFilesInAllSubDir(inputDir string, servprefix string) error {
 					go processNcdUtil(path, servername)
 				}
 
+				if info.Name() == "nvmeoeutil.log" {
+					go ProcessCtrlInfo(path, servername)
+				}
+
+				if info.Name() == "sputil.log" {
+					go ProcessSputilInfo(path, servername)
+				}
+
 				if info.Name() == "node.log" {
 					go ProcessNodeInfo(path, servername)
 				}
@@ -230,6 +247,18 @@ func checkErrorExists(myerr MyError) bool {
 }
 func writeToDBBackend(wval interface{}) {
 	switch wval.(type) {
+	case CtrlInfo:
+		mymapmap := wval.(CtrlInfo)
+		elem := NameMap{mymapmap.name, mymapmap.mymapmap}
+		fmt.Printf("WriteToDB Ctrl Info: %#v\n", elem)
+		Gdata.CtrlSlice = append(Gdata.CtrlSlice, elem)
+
+	case SputilInfo:
+		mymapmap := wval.(SputilInfo)
+		elem := NameMap{mymapmap.name, mymapmap.mymapmap}
+		fmt.Printf("WriteToDB Sputl Info: %#v\n", elem)
+		Gdata.SputilSlice = append(Gdata.SputilSlice, elem)
+
 	case NodeList:
 		nval := wval.(NodeList)
 		Gdata.NodeDB = nval
@@ -326,6 +355,10 @@ func workOnReadFromDBChan(rval ReadData) {
 	}()
 
 	switch data.(type) {
+	case SputilInfo:
+		outIntf = Gdata.SputilSlice
+	case CtrlInfo:
+		outIntf = Gdata.CtrlSlice
 	case SystemInfo:
 		copymap := map[string]SystemInfo{}
 		for key, value := range SystemMap {

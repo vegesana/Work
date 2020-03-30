@@ -92,7 +92,7 @@ func ProcessNetworkInfo(path string, servername string) {
 	var decodeData NetworkList
 	json.Unmarshal(b, &decodeData)
 	fmt.Printf("Total Item : %d\n", decodeData.TotalItems)
-	fmt.Printf("%#v\n", decodeData)
+	// fmt.Printf("%#v\n", decodeData)
 	writeToDb(decodeData)
 
 }

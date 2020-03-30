@@ -4,7 +4,6 @@ import (
 	"DebugTool/src/api"
 	"DebugTool/src/unversioned"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -134,7 +133,7 @@ func ProcessNodeInfo(path string, servername string) {
 
 	var decodeData NodeList
 	json.Unmarshal(b, &decodeData)
-	fmt.Printf("%#v\n", decodeData)
+	//fmt.Printf("%#v\n", decodeData)
 	writeToDb(decodeData)
 
 }

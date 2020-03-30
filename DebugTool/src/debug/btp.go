@@ -21,7 +21,8 @@ func DumpBtpErrors(servername string) {
 			if strings.Contains(k.key, "Number of queued NVMEoE command frames") {
 				value, _ := strconv.Atoi(v)
 				if value != 0 {
-					reason := "NVMEoE Commands are queued and not dequed by BTP"
+					reason := "NVMEoE Commands are queued and not dequed by BTP" +
+						",ERROR ONLY IF THIS COUNT IS ALWAYS LIKE THIS"
 					err := fmt.Sprintf("lport:%s,sess:%s,val:%d: %s\n",
 						k.lport, k.session, value, reason)
 					writeToDb(MyError{servername, err})
