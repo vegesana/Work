@@ -20,7 +20,9 @@ type page struct {
 	NetworkInfor []NetworkRest
 	NodeInfor    []NodeRest
 	// Map[string][]map[string]string i.e servername: values id:key,value
-	CtrlInfor []CtrlInfoRest
+	CtrlInfor    []CtrlInfoRest
+	D10lifSlice  []D10LifInfoRest
+	D10VlanSlice []D10VlanInfoRest
 }
 type CtrlInfoRest struct {
 	Servername   string
@@ -65,6 +67,25 @@ type PortPairRest struct {
 	SPort string
 	DPort string
 }
+type D10VlanRest struct {
+	Vlan      uint64
+	LifBitmap string
+}
+type D10VlanInfoRest struct {
+	Server  string
+	D10Vlan []D10VlanRest
+}
+
+type LifRest struct {
+	LifId uint64
+	Vlan  uint64
+	Pif   uint64
+}
+type D10LifInfoRest struct {
+	Server   string
+	LifSlice []LifRest
+}
+
 type PinInfoRest struct {
 	Server    string
 	PortSlice []PortPairRest
@@ -261,13 +282,65 @@ func (r *RestObj) HandlePinInfo(w http.ResponseWriter, req *http.Request) {
 	templates.Lookup("Body").Execute(w, page)
 
 }
+
 func (r *RestObj) HandlePclInfo(w http.ResponseWriter, req *http.Request) {
 
 	val := debug.GetPclInfo()
 	pclInfo := val.(map[string][]string)
 	fmt.Printf("handle pcl info%#v\n", pclInfo)
+	lifdata := debug.GetLifData()
+
+	MyMap := map[string][]LifRest{}
+	for _, value := range lifdata.([]debug.D10LifEntry) {
+		slice := MyMap[value.Server]
+		element := LifRest{value.LifID, value.VlanId, value.PIF}
+		slice = append(slice, element)
+		MyMap[value.Server] = slice
+	}
+
+	sliceInfoRest := []D10LifInfoRest{}
+	for server, lifinfo := range MyMap {
+		sliceInfo := D10LifInfoRest{}
+		sliceInfo.Server = server
+		for _, v := range lifinfo {
+			sliceInfo.LifSlice = append(sliceInfo.LifSlice, v)
+		}
+		sliceInfoRest = append(sliceInfoRest, sliceInfo)
+	}
+	fmt.Printf("lifdata Rest:%#v\n", sliceInfoRest)
+
+	vlandata := debug.GetVlanFloodData()
+	MyMapv := map[string][]D10VlanRest{}
+	for _, value := range vlandata.([]debug.D10VlanFlood) {
+		slice := MyMapv[value.Server]
+		floodstr := fmt.Sprintf("%016b", value.LifFLoodMap)
+		element := D10VlanRest{value.VlanID, floodstr}
+		slice = append(slice, element)
+		MyMapv[value.Server] = slice
+	}
+	slicevRest := []D10VlanInfoRest{}
+	for server, vinfo := range MyMapv {
+		sliceInfo := D10VlanInfoRest{}
+		sliceInfo.Server = server
+		for _, v := range vinfo {
+			sliceInfo.D10Vlan = append(sliceInfo.D10Vlan, v)
+		}
+		slicevRest = append(slicevRest, sliceInfo)
+	}
+
+	fmt.Printf("lifdata Rest:%#v\n", slicevRest)
 
 	w.Header().Add("Content Type", "text/html")
+	templatesV := template.New("templateV")
+	templatesV.New("Body").Parse(d10VDoc)
+	templatesV.New("List").Parse(d10VDocList)
+	templatesV.New("List1").Parse(d10VDocList1)
+
+	templatesLif := template.New("templateLif")
+	templatesLif.New("Body").Parse(lifDoc)
+	templatesLif.New("List").Parse(lifDocList)
+	templatesLif.New("List1").Parse(lifDocList1)
+
 	templates := template.New("template")
 	templates.New("Body").Parse(pclDoc)
 	templates.New("List").Parse(pclDocList)
@@ -284,8 +357,22 @@ func (r *RestObj) HandlePclInfo(w http.ResponseWriter, req *http.Request) {
 		pclInfoRest = append(pclInfoRest, pclrest)
 	}
 
-	page := page{Title: "PCL VLAN Information", PclInfo: pclInfoRest}
-	templates.Lookup("Body").Execute(w, page)
+	fmt.Println("Lengh of lIF slice ", len(sliceInfoRest))
+	fmt.Println("Lengh of PCL slice ", len(pclInfoRest))
+	fmt.Println("Lengh of D10 Vlan list ", len(slicevRest))
+
+	p := page{Title: "PCL VLAN Information", PclInfo: pclInfoRest}
+	p1 := page{Title: "LIf Information", D10lifSlice: sliceInfoRest}
+	p2 := page{Title: "Vlan Information", D10VlanSlice: slicevRest}
+	if len(pclInfoRest) > 0 {
+		templates.Lookup("Body").Execute(w, p)
+	}
+	if len(sliceInfoRest) > 0 {
+		templatesLif.Lookup("Body").Execute(w, p1)
+	}
+	if len(sliceInfoRest) > 0 {
+		templatesV.Lookup("Body").Execute(w, p2)
+	}
 
 }
 func (r *RestObj) HandleMacInfo(w http.ResponseWriter, req *http.Request) {
@@ -364,6 +451,15 @@ func (r *RestObj) HandleDebugConfig(resp http.ResponseWriter, req *http.Request)
 
 	path := req.Form["path"]
 	servname := req.Form["servername"][0]
+	cmd := req.Form["debugcmd"][0]
+
+	fmt.Println("cmd is:", cmd)
+
+	if cmd == "DebugClear" {
+		resp.Write([]byte("<h1>Clearing all the DB</h1>"))
+		debug.ClearDB()
+		return
+	}
 
 	for _, val := range path {
 		debug.Start(val, servname)

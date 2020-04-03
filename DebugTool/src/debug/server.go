@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var oneTimeNetworkCfg bool
+
 type Key struct {
 	lport, session, key string
 }
@@ -71,13 +73,15 @@ type FInfo struct {
 	size    int64
 }
 type GlobalData struct {
-	FDB         map[MacVlan]map[GPort]struct{}
-	PortDB      map[GPort]map[MacVlan]struct{}
-	VlanDB      map[GVlan]map[GPort]struct{}
-	NodeDB      NodeList
-	CtrlSlice   []NameMap
-	SputilSlice []NameMap
-	NetworkDB   NetworkList
+	FDB            map[MacVlan]map[GPort]struct{}
+	PortDB         map[GPort]map[MacVlan]struct{}
+	VlanDB         map[GVlan]map[GPort]struct{}
+	NodeDB         NodeList
+	CtrlSlice      []NameMap
+	SputilSlice    []NameMap
+	LifSlice       []D10LifEntry
+	VlanFloodSlice []D10VlanFlood
+	NetworkDB      NetworkList
 	// appser33: map {1-3 4,5}
 	PinDB       map[string]map[string]string
 	PclDb       map[string][]string
@@ -146,6 +150,8 @@ func init() {
 	Gdata.VlanDB = map[GVlan]map[GPort]struct{}{}
 	Gdata.CtrlSlice = make([]NameMap, 0)
 	Gdata.SputilSlice = make([]NameMap, 0)
+	Gdata.LifSlice = make([]D10LifEntry, 0)
+	Gdata.VlanFloodSlice = make([]D10VlanFlood, 0)
 	Gdata.PinDB = map[string]map[string]string{}
 	Gdata.PclDb = map[string][]string{}
 
@@ -187,8 +193,6 @@ func getServerNameFromPath(path string, servprefix string) string {
 func loopThroughAllFilesInAllSubDir(inputDir string, servprefix string) error {
 
 	var servername string
-	var oneTimeNetworkCfg bool
-
 	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
 
 		if strings.Contains(path, servprefix) {
@@ -199,37 +203,26 @@ func loopThroughAllFilesInAllSubDir(inputDir string, servprefix string) error {
 					fmt.Println("Boardinfo ", path)
 					processBoardInfo(path, servername)
 				}
-				if info.Name() == "fwdcounters.log" {
-					fmt.Println("fwdcounter", path)
-					processFwdCounters(path, servername)
-				}
-				if info.Name() == "btputil.log" {
-					fmt.Println("btputil", path)
-					processBtpUtil(path, servername)
-				}
+			}
+		}
+		return nil
+	})
 
-				if info.Name() == "ncdutil.log" {
-					go processNcdUtil(path, servername)
-				}
+	sysinfo := GetSystemInfo()
+	boardMap := sysinfo.(map[string]SystemInfo)
 
-				if info.Name() == "nvmeoeutil.log" {
-					go ProcessCtrlInfo(path, servername)
-				}
+	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
 
-				if info.Name() == "sputil.log" {
-					go ProcessSputilInfo(path, servername)
-				}
+		if strings.Contains(path, servprefix) {
+			if servername = getServerNameFromPath(path, servprefix); servername != "" {
 
-				if info.Name() == "node.log" {
-					go ProcessNodeInfo(path, servername)
-				}
-				if info.Name() == "network.log" {
-					if !oneTimeNetworkCfg {
-						go ProcessNetworkInfo(path, servername)
-						oneTimeNetworkCfg = true
-					}
-				}
+				processCommon(path, servername, info)
 
+				if boardMap[servername].ProductId == "Diamanti D20" {
+					processD20(path, servername, info)
+				} else {
+					processD10(path, servername, info)
+				}
 			}
 		}
 		return nil
@@ -237,6 +230,50 @@ func loopThroughAllFilesInAllSubDir(inputDir string, servprefix string) error {
 	return nil
 }
 
+/* This is applicable for both D10 and D20 */
+func processCommon(path, servername string, info os.FileInfo) {
+	if info.Name() == "btputil.log" {
+		fmt.Println("btputil", path)
+		processBtpUtil(path, servername)
+	}
+	if info.Name() == "nvmeoeutil.log" {
+		go ProcessCtrlInfo(path, servername)
+	}
+
+	if info.Name() == "sputil.log" {
+		go ProcessSputilInfo(path, servername)
+	}
+
+	if info.Name() == "node.log" {
+		go ProcessNodeInfo(path, servername)
+	}
+	if info.Name() == "network.log" {
+		if !oneTimeNetworkCfg {
+			go ProcessNetworkInfo(path, servername)
+			oneTimeNetworkCfg = true
+		}
+	}
+	if info.Name() == "fwdcounters.log" {
+		fmt.Println("fwdcounter", path)
+		processFwdCounters(path, servername)
+	}
+
+}
+func processD10(path, servername string, info os.FileInfo) {
+
+	if info.Name() == "l2_hwtables.log" {
+		go processL2Util(path, servername)
+	}
+
+}
+
+func processD20(path, servername string, info os.FileInfo) {
+
+	if info.Name() == "ncdutil.log" {
+		go processNcdUtil(path, servername)
+	}
+
+}
 func checkErrorExists(myerr MyError) bool {
 
 	if _, ok := tempErrorExistsMap[myerr]; !ok {
@@ -259,6 +296,12 @@ func writeToDBBackend(wval interface{}) {
 		fmt.Printf("WriteToDB Sputl Info: %#v\n", elem)
 		Gdata.SputilSlice = append(Gdata.SputilSlice, elem)
 
+	case D10LifEntry:
+		nval := wval.(D10LifEntry)
+		Gdata.LifSlice = append(Gdata.LifSlice, nval)
+	case D10VlanFlood:
+		nval := wval.(D10VlanFlood)
+		Gdata.VlanFloodSlice = append(Gdata.VlanFloodSlice, nval)
 	case NodeList:
 		nval := wval.(NodeList)
 		Gdata.NodeDB = nval
@@ -379,6 +422,10 @@ func workOnReadFromDBChan(rval ReadData) {
 		outIntf = Gdata.NetworkDB
 	case NodeList:
 		outIntf = Gdata.NodeDB
+	case D10LifEntry:
+		outIntf = Gdata.LifSlice
+	case D10VlanFlood:
+		outIntf = Gdata.VlanFloodSlice
 	default:
 		fmt.Println("Read for unknown type of data")
 	}
@@ -423,4 +470,25 @@ func GetSystemInfo() interface{} {
 	fmt.Println("Geting system informatin")
 	sysinfo := SystemInfo{}
 	return readFromDb(sysinfo)
+}
+func ClearDB() {
+	Gdata.FDB = nil
+	Gdata.PortDB = nil
+	Gdata.VlanDB = nil
+	Gdata.CtrlSlice = nil
+	Gdata.SputilSlice = nil
+	Gdata.LifSlice = nil
+	Gdata.VlanFloodSlice = nil
+	Gdata.PinDB = nil
+	Gdata.PclDb = nil
+
+	Gdata.FDB = map[MacVlan]map[GPort]struct{}{}
+	Gdata.PortDB = map[GPort]map[MacVlan]struct{}{}
+	Gdata.VlanDB = map[GVlan]map[GPort]struct{}{}
+	Gdata.CtrlSlice = make([]NameMap, 0)
+	Gdata.SputilSlice = make([]NameMap, 0)
+	Gdata.LifSlice = make([]D10LifEntry, 0)
+	Gdata.VlanFloodSlice = make([]D10VlanFlood, 0)
+	Gdata.PinDB = map[string]map[string]string{}
+	Gdata.PclDb = map[string][]string{}
 }

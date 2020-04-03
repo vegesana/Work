@@ -1,5 +1,100 @@
 package rest
 
+const d10VDoc = `
+<!DOCTYPE html>
+<html>
+    <head><title>{{.Title}}</title></head>
+    <body>
+        <h1>{{.Title}}</h1>
+		<h5>LSB/RightMostBit : Lif-0</h5>
+		<table style="width:26%" border="3">
+        <tr>
+            	<th> Server </th>
+            	<th> FLOOD BITMAP</th>
+        </tr>
+			{{template "List" .D10VlanSlice}}
+        </table>
+    </body>
+</html>
+`
+
+const d10VDocList = `
+<ul >
+    {{range .}}
+    <tr>
+        <td>{{.Server}}</td>
+	        {{template "List1" .D10Vlan}}
+    </tr>
+    {{end}}
+</ul>
+`
+const d10VDocList1 = `
+<ul >
+	<td>
+		<table style="width:25%" border="1">
+		<tr>
+			<th> VLANID </th>
+			<th> LIF BITMAP</th>
+		</tr>
+    {{range .}}
+		<tr>
+        	<td>{{.Vlan}}</td>
+        	<td>{{.LifBitmap}}</td>
+		</tr>
+    {{end}}
+	</td>
+	</table>
+</ul>
+`
+
+const lifDoc = `
+<!DOCTYPE html>
+<html>
+    <head><title>{{.Title}}</title></head>
+    <body>
+        <h1>{{.Title}}</h1>
+		<table style="width:23%" border="3">
+        <tr>
+            	<th> Server </th>
+            	<th> LIFID,VLANID,PHYIF </th>
+        </tr>
+	        {{template "List" .D10lifSlice}}
+        </table>
+    </body>
+</html>
+`
+
+const lifDocList = `
+<ul >
+    {{range .}}
+    <tr>
+        <td>{{.Server}}</td>
+	        {{template "List1" .LifSlice}}
+    </tr>
+    {{end}}
+</ul>
+`
+const lifDocList1 = `
+<ul >
+	<td>
+		<table style="width:24%" border="1">
+		<tr>
+			<th> LIFID </th>
+			<th> VLANID</th>
+			<th> PHYIF INFO </th>
+		</tr>
+    {{range .}}
+		<tr>
+        	<td>{{.LifId}}</td>
+        	<td>{{.Vlan}}</td>
+        	<td>{{.Pif}}</td>
+		</tr>
+    {{end}}
+	</td>
+	</table>
+</ul>
+`
+
 const ctrlDocList = `
 <ul >
     {{range .}}
