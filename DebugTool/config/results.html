@@ -63,6 +63,10 @@
             <button class="tablinks" onclick="openCity(event, 'MACINFO')">MACINFO</button>
             <button class="tablinks" onclick="openCity(event, 'PININFO')">PININFO</button>
             <button class="tablinks" onclick="openCity(event, 'PCLVLANINFO')">PCLVLANINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'NODEINFO')">NODEINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'NETWORKINFO')">NETWORKINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'CTRLINFO')">CTRLINFO</button>
+            <button class="tablinks" onclick="openCity(event, 'SPUTILINFO')">SPUTILINFO</button>
             <button class="tablinks" onclick="openCity(event, 'TESTDRAW')">TESTDRAW</button>
         </div>
 
@@ -88,7 +92,7 @@
 
 
         <div id="PININFO" class="tabcontent">
-         <h3>Pin Information</h3>
+         <h3> Pin Information</h3>
         <form action="/pinSubmit" method="post">
             <h2>
                 <table style="width:20%">
@@ -101,7 +105,69 @@
                 <button class="btn danger" name=pinmd value="PinInfoClear" > Clear</button>
         </form>
         </div>
+        
+        <div id="NODEINFO" class="tabcontent">
+         <h3> Node Information </h3>
+        <form action="/nodeSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> Node Information: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=nodecmd value="NodeInfoShow" >Show</button>
+                <button class="btn danger" name=nodecmd value="NodeInfoClear" > Clear</button>
+        </form>
+        </div>
 
+        <div id="CTRLINFO" class="tabcontent">
+         <h3> Controllers Information </h3>
+        <form action="/ctrlSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> Controller Information </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=ctrlcmd value="CtrlInfoShow" >Show</button>
+                <button class="btn danger" name=ctrlcmd value="CtrlInfoClear" > Clear</button>
+        </form>
+        </div>
+
+
+        <div id="SPUTILINFO" class="tabcontent">
+         <h3> SPUTIL Information </h3>
+        <form action="/sputilSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> SPUTIL Information: </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=sputilcmd value="SputilInfoShow" >Show</button>
+                <button class="btn danger" name=sputilcmd value="SputilInfoClear" > Clear</button>
+        </form>
+        </div>
+
+         <div id="NETWORKINFO" class="tabcontent">
+         <h3> NETWORK Information </h3>
+        <form action="/networkSubmit" method="post">
+            <h2>
+                <table style="width:20%">
+                    <tr>
+                        <td><label> NETWORK Information </label> </td>
+                    </tr>
+                </table>
+            </h2>
+                <button class="btn success" name=networkcmd value="NetworkInfoShow" >Show</button>
+                <button class="btn danger" name=networkcmd value="NetworkInfoClear" > Clear</button>
+        </form>
+        </div>
+
+ 
         <div id="PCLVLANINFO" class="tabcontent">
          <h3>PCL And VLAN Information</h3>
         <form action="/pclSubmit" method="post">

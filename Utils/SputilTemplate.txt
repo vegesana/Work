@@ -1,0 +1,11 @@
+    volume-00 addr:         0x80000001f6803680
+    type:               0
+    nplex:              1
+    pref_plex:          0
+    formatted block sz: 0
+    state:              7
+    quiesce_state:      0
+    nblk:               0x773d00 (in terms of 4K blocks)
+    rdonly:             0x0
+    resync in progress: 0
+    vol_obj_p_index:      0

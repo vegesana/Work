@@ -112,3 +112,27 @@ func getKeyValue(data, express string, count int) (map[string]string, error) {
 	return mymap, err
 
 }
+
+func getNewKeyValue(data, express string) (map[int]map[string]string, error) {
+
+	var err = errors.New("Error")
+
+	r, _ := regexp.Compile(express)
+	mymap := make(map[int]map[string]string)
+
+	// Result is slice of slices
+	if resultSliceSlice := r.FindAllStringSubmatch(data, -1); len(resultSliceSlice) != 0 {
+		for index, slice := range resultSliceSlice {
+			mymap[index] = make(map[string]string)
+			mylen := len(slice)
+			for j := 0; j < (mylen-1)/2; j++ {
+				k := 2*j + 1
+				//fmt.Printf("Index:%d,key:%svalue:%s\n", index, slice[k], slice[k+1])
+				mymap[index][slice[k]] = slice[k+1]
+				err = nil
+			}
+		}
+	}
+	return mymap, err
+
+}

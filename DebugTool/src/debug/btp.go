@@ -21,7 +21,8 @@ func DumpBtpErrors(servername string) {
 			if strings.Contains(k.key, "Number of queued NVMEoE command frames") {
 				value, _ := strconv.Atoi(v)
 				if value != 0 {
-					reason := "NVMEoE Commands are queued and not dequed by BTP"
+					reason := "NVMEoE Commands are queued and not dequed by BTP" +
+						",ERROR ONLY IF THIS COUNT IS ALWAYS LIKE THIS"
 					err := fmt.Sprintf("lport:%s,sess:%s,val:%d: %s\n",
 						k.lport, k.session, value, reason)
 					writeToDb(MyError{servername, err})
@@ -77,11 +78,30 @@ func DumpBtpErrors(servername string) {
 	}
 	// Check The BTP session
 	// ping_state : BTP_PING_ST_REQ_SENT (sent and waiting for response)
+
+	processBtpResult(servername)
 }
 
-func processBtpResult() {
+func processBtpResult(servername string) {
 
+	/* Print all invalid sessiss */
+
+	for sess, v := range btpUtilMap {
+		/* InValid Sessions */
+		if strings.Contains(sess.key, "Session State") {
+			value, _ := strconv.Atoi(v)
+			if value == 2 {
+				reason := "Session State : BTP_SESS_UNREACHABLE"
+				err := fmt.Sprintf("<lport:%s,sess:%s>, Err:%s\n",
+					sess.lport, sess.session, reason)
+				writeToDb(MyError{servername, err})
+				// INFO DB - <lport,session,"loal mac address>
+
+			}
+		}
+	}
 }
+
 func getAllValidSessions() []VSession {
 	myslice := make([]VSession, 0)
 
@@ -127,7 +147,7 @@ func processBtpUtil(path string, servername string) error {
 			}
 			if lstart && sstart {
 				if strings.Contains(line, ":") {
-					pair := strings.Split(line, ":")
+					pair := strings.SplitN(line, ":", 2)
 					mystr := strings.TrimSpace(pair[0])
 					if _, ok := AllStringKeyMap[mystr]; !ok {
 						AllStringKeyMap[mystr] = struct{}{}
@@ -139,7 +159,6 @@ func processBtpUtil(path string, servername string) error {
 
 		}
 	}
-	fmt.Println("End processBtpUtil", servername)
 	DumpBtpErrors(servername)
 	return nil
 }
