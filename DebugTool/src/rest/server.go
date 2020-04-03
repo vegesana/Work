@@ -174,7 +174,18 @@ func (r *RestObj) HandleCtrlInfo(w http.ResponseWriter, req *http.Request) {
 			ctrlelem := CtrlInfoRest{} // Fill the data
 			ctrlelem.Servername = cinfo.Servername
 			ctrlelem.Id = valuemap["id"]
-			ctrlelem.Type = valuemap["type"]
+			var mytype string
+			switch strings.TrimSpace(valuemap["type"]) {
+			case "2":
+				mytype = "PROXY"
+			case "4":
+				mytype = "REMOTE"
+			case "1":
+				mytype = "LOCAL"
+			default:
+				mytype = "UNKNOWN"
+			}
+			ctrlelem.Type = mytype
 			ctrlelem.LocalMac = valuemap["local_mac"]
 			ctrlelem.RemoteMac = valuemap["remote_mac"]
 			ctrlelem.PairedCtrlId = valuemap["paired_ctrl_id"]
