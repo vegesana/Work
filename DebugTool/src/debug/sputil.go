@@ -1,13 +1,18 @@
 package debug
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 )
 
 type SputilInfo struct {
-	name     string
-	mymapmap map[int]map[string]string
+	Server string
+	// LDFS CORE  IDString key, value
+	//			  IDString
+	// Mariner    IDstring
+	// 			  IDString
+	Mymapmap map[string]map[string]map[string]string
 }
 
 func ProcessSputilInfo(path string, servername string) {
@@ -16,6 +21,9 @@ func ProcessSputilInfo(path string, servername string) {
 
 	b, _ := ioutil.ReadAll(f)
 	Debug("Sptuils", string(b))
+
+	sputil := SputilInfo{Server: servername}
+	fmt.Println("sputils", sputil)
 
 }
 

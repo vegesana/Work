@@ -78,7 +78,7 @@ type GlobalData struct {
 	VlanDB         map[GVlan]map[GPort]struct{}
 	NodeDB         NodeList
 	CtrlSlice      []NameMap
-	SputilSlice    []NameMap
+	SputilSlice    []SputilInfo
 	LifSlice       []D10LifEntry
 	VlanFloodSlice []D10VlanFlood
 	NetworkDB      NetworkList
@@ -149,7 +149,7 @@ func init() {
 	Gdata.PortDB = map[GPort]map[MacVlan]struct{}{}
 	Gdata.VlanDB = map[GVlan]map[GPort]struct{}{}
 	Gdata.CtrlSlice = make([]NameMap, 0)
-	Gdata.SputilSlice = make([]NameMap, 0)
+	Gdata.SputilSlice = make([]SputilInfo, 0)
 	Gdata.LifSlice = make([]D10LifEntry, 0)
 	Gdata.VlanFloodSlice = make([]D10VlanFlood, 0)
 	Gdata.PinDB = map[string]map[string]string{}
@@ -291,8 +291,7 @@ func writeToDBBackend(wval interface{}) {
 		Gdata.CtrlSlice = append(Gdata.CtrlSlice, elem)
 
 	case SputilInfo:
-		mymapmap := wval.(SputilInfo)
-		elem := NameMap{mymapmap.name, mymapmap.mymapmap}
+		elem := wval.(SputilInfo)
 		fmt.Printf("WriteToDB Sputl Info: %#v\n", elem)
 		Gdata.SputilSlice = append(Gdata.SputilSlice, elem)
 
@@ -486,7 +485,7 @@ func ClearDB() {
 	Gdata.PortDB = map[GPort]map[MacVlan]struct{}{}
 	Gdata.VlanDB = map[GVlan]map[GPort]struct{}{}
 	Gdata.CtrlSlice = make([]NameMap, 0)
-	Gdata.SputilSlice = make([]NameMap, 0)
+	Gdata.SputilSlice = make([]SputilInfo, 0)
 	Gdata.LifSlice = make([]D10LifEntry, 0)
 	Gdata.VlanFloodSlice = make([]D10VlanFlood, 0)
 	Gdata.PinDB = map[string]map[string]string{}
