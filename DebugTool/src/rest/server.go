@@ -23,6 +23,13 @@ type page struct {
 	CtrlInfor    []CtrlInfoRest
 	D10lifSlice  []D10LifInfoRest
 	D10VlanSlice []D10VlanInfoRest
+
+	IntfHelpInfo []IntfHelpRest
+}
+
+type IntfHelpRest struct {
+	Help string
+	Desc string
 }
 type CtrlInfoRest struct {
 	Servername   string
@@ -365,6 +372,7 @@ func (r *RestObj) HandlePclInfo(w http.ResponseWriter, req *http.Request) {
 	p1 := page{Title: "LIf Information", D10lifSlice: sliceInfoRest}
 	p2 := page{Title: "Vlan Information", D10VlanSlice: slicevRest}
 	if len(pclInfoRest) > 0 {
+		r.helpDump(w, req)
 		templates.Lookup("Body").Execute(w, p)
 	}
 	if len(sliceInfoRest) > 0 {
@@ -373,6 +381,17 @@ func (r *RestObj) HandlePclInfo(w http.ResponseWriter, req *http.Request) {
 	if len(sliceInfoRest) > 0 {
 		templatesV.Lookup("Body").Execute(w, p2)
 	}
+
+}
+
+func (r *RestObj) helpDump(w http.ResponseWriter, req *http.Request) {
+	templates := template.New("template")
+	templates.New("Body").Parse(intfHelpDoc)
+	templates.New("List").Parse(intfHelpDocList)
+	helpSlice := []IntfHelpRest{{"0", "Host Port"}, {"1", "Network Port"},
+		{"2", "NVME Port"}}
+	p := page{Title: "Interface Definitions", IntfHelpInfo: helpSlice}
+	templates.Lookup("Body").Execute(w, p)
 
 }
 func (r *RestObj) HandleMacInfo(w http.ResponseWriter, req *http.Request) {

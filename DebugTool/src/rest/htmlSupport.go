@@ -209,30 +209,35 @@ const networkDoc = `
     </body>
 </html>
 `
-const pclDocList1 = `
-<ul >
-	<td>
-		<table style="width:140%" border="0">
-    {{range .}}
-		<tr>
-        	<td>{{.Rule}}</td>
-		</tr>
-    {{end}}
-	</td>
-	</table>
-</ul>
+
+const intfHelpDoc = `
+<!DOCTYPE html>
+<html>
+    <head><title>{{.Title}}</title></head>
+    <body>
+        <h1>{{.Title}}</h1>
+		<table style="width:15%" border="3">
+        <tr>
+            	<th> intf_type </th>
+            	<th> Description </th>
+        </tr>
+	        {{template "List" .IntfHelpInfo}}
+        </table>
+    </body>
+</html>
 `
 
-const pclDocList = `
+const intfHelpDocList = `
 <ul >
     {{range .}}
     <tr>
-        <td>{{.Server}}</td>
-	        {{template "List1" .RuleList}}
+        <td>{{.Help}}</td>
+        <td>{{.Desc}}</td>
     </tr>
     {{end}}
 </ul>
 `
+
 const pclDoc = `
 <!DOCTYPE html>
 <html>
@@ -250,6 +255,30 @@ const pclDoc = `
 </html>
 `
 
+const pclDocList = `
+<ul >
+    {{range .}}
+    <tr>
+        <td>{{.Server}}</td>
+	        {{template "List1" .RuleList}}
+    </tr>
+    {{end}}
+</ul>
+`
+
+const pclDocList1 = `
+<ul >
+	<td>
+		<table style="width:140%" border="0">
+    {{range .}}
+		<tr>
+        	<td>{{.Rule}}</td>
+		</tr>
+    {{end}}
+	</td>
+	</table>
+</ul>
+`
 const pinDocList1 = `
 <ul >
 	<td>
